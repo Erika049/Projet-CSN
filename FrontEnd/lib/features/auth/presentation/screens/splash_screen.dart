@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
+import 'choix_poste_screen.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -95,7 +96,14 @@ class SplashScreen extends StatelessWidget {
                   icon: Icons.person_outline,
                   title: 'Personnel médical',
                   subtitle: 'Médecin · Infirmier · Accueil · Labo · Pharma',
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChoixPosteScreen(),
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 24),
