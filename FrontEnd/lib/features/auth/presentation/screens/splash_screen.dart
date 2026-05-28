@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
+import 'inscription_screen.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatelessWidget {
@@ -99,11 +100,10 @@ class SplashScreen extends StatelessWidget {
                   title: 'Inscription',
                   subtitle: 'Creer votre compte patient',
                   onTap: () {
-                    // TODO: Naviguer vers ecran inscription patient
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Inscription patient (a venir)'),
-                        backgroundColor: AppColors.info,
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const InscriptionScreen(),
                       ),
                     );
                   },
