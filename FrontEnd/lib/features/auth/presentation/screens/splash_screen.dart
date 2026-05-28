@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
-import 'choix_poste_screen.dart';
+import 'login_screen.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -9,14 +9,14 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF0D1B3E),
-              Color(0xFF152347),
-              Color(0xFF1A2D5A),
+              AppColors.backgroundDark,
+              AppColors.backgroundDarkSecondary,
+              AppColors.backgroundDarkSecondary.withAlpha(230),
             ],
           ),
         ),
@@ -34,7 +34,7 @@ class SplashScreen extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF16A34A)],
+                      colors: [AppColors.primary, AppColors.success],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -50,57 +50,60 @@ class SplashScreen extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 // Titre
-                const Text(
+                Text(
                   'UCAC · ICAM',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF94A3B8),
+                  style: AppTextStyles.labelSmall.copyWith(
                     letterSpacing: 1.5,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Carnet Santé',
-                  style: TextStyle(
+                Text(
+                  'Carnet Sante',
+                  style: AppTextStyles.h1White.copyWith(
                     fontSize: 36,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
                     height: 1.1,
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Votre dossier médical, sécurisé par biométrie et accessible dans tous les hôpitaux partenaires.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF94A3B8),
+                Text(
+                  'Votre dossier medical, securise par biometrie et accessible dans tous les hopitaux partenaires.',
+                  style: AppTextStyles.bodyLargeWhite.copyWith(
+                    color: AppColors.textLight,
                     height: 1.6,
                   ),
                 ),
 
                 const Spacer(),
 
-                // Carte Patient
-                _RoleCard(
-                  icon: Icons.person_outline,
-                  title: 'Je suis patient',
-                  subtitle: 'Consulter mon carnet · Présenter ma carte QR',
-                  onTap: () {},
-                ),
-
-                const SizedBox(height: 12),
-
-                // Carte Personnel médical
-                _RoleCard(
-                  icon: Icons.person_outline,
-                  title: 'Personnel médical',
-                  subtitle: 'Médecin · Infirmier · Accueil · Labo · Pharma',
+                // Bouton Connexion
+                _ActionCard(
+                  icon: Icons.login,
+                  title: 'Connexion',
+                  subtitle: 'Acceder a votre carnet de sante',
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const ChoixPosteScreen(),
+                        builder: (_) => const LoginScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                // Bouton Inscription
+                _ActionCard(
+                  icon: Icons.person_add_outlined,
+                  title: 'Inscription',
+                  subtitle: 'Creer votre compte patient',
+                  onTap: () {
+                    // TODO: Naviguer vers ecran inscription patient
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Inscription patient (a venir)'),
+                        backgroundColor: AppColors.info,
                       ),
                     );
                   },
@@ -108,38 +111,12 @@ class SplashScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // Créer mon compte
-                Center(
-                  child: RichText(
-                    text: const TextSpan(
-                      text: 'Pas encore de carnet ? ',
-                      style: TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'Créer mon compte',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
                 // Version
                 const Center(
                   child: Text(
-                    'v1.0.0 · API 192.168.1.10:5000',
+                    'v1.0.0',
                     style: TextStyle(
-                      color: Color(0xFF475569),
+                      color: AppColors.textMedium,
                       fontSize: 12,
                     ),
                   ),
@@ -155,13 +132,13 @@ class SplashScreen extends StatelessWidget {
   }
 }
 
-class _RoleCard extends StatelessWidget {
+class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
-  const _RoleCard({
+  const _ActionCard({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -175,10 +152,10 @@ class _RoleCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E3A6E).withOpacity(0.6),
+          color: AppColors.backgroundDarkSecondary.withAlpha(153),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withAlpha(25),
             width: 1,
           ),
         ),
@@ -188,7 +165,7 @@ class _RoleCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withAlpha(25),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: Colors.white, size: 22),
@@ -210,7 +187,7 @@ class _RoleCard extends StatelessWidget {
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      color: Color(0xFF94A3B8),
+                      color: AppColors.textLight,
                       fontSize: 13,
                     ),
                   ),
@@ -219,7 +196,7 @@ class _RoleCard extends StatelessWidget {
             ),
             const Icon(
               Icons.chevron_right,
-              color: Color(0xFF94A3B8),
+              color: AppColors.textLight,
               size: 20,
             ),
           ],
