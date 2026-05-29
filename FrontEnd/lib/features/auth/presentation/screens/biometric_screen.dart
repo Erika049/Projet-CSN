@@ -95,7 +95,7 @@ class _BiometricScreenState extends State<BiometricScreen>
   }
 
   Future<void> _logout() async {
-    await _authService.clearSession();
+    await _authService.logout();
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,

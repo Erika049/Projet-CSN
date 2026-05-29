@@ -86,7 +86,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Choisir une photo', style: AppTextStyles.h4),
+                  child: Text(
+                    'Choisir une photo',
+                    style: AppTextStyles.h4,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -100,8 +103,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.camera_alt_outlined,
-                      color: AppColors.primary),
+                  child: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: AppColors.primary,
+                  ),
                 ),
                 title: const Text('Prendre une photo'),
                 onTap: () async {
@@ -127,8 +132,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                     color: const Color(0xFFEDE9FE),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.photo_library_outlined,
-                      color: Color(0xFF7C3AED)),
+                  child: const Icon(
+                    Icons.photo_library_outlined,
+                    color: Color(0xFF7C3AED),
+                  ),
                 ),
                 title: const Text('Choisir depuis la galerie'),
                 onTap: () async {
@@ -155,8 +162,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                       color: AppColors.errorLight,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.delete_outline,
-                        color: AppColors.error),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.error,
+                    ),
                   ),
                   title: const Text('Supprimer la photo'),
                   onTap: () {
@@ -201,12 +210,16 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 16),
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Date de naissance',
-                          style: AppTextStyles.h4),
+                      const Text(
+                        'Date de naissance',
+                        style: AppTextStyles.h4,
+                      ),
                       TextButton(
                         onPressed: () {
                           setState(() => _dateNaissance = tempDate);
@@ -276,8 +289,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 const EdgeInsets.symmetric(horizontal: 24),
                 title: Text(item, style: AppTextStyles.bodyLarge),
                 trailing: item == selected
-                    ? const Icon(Icons.check_circle,
-                    color: AppColors.primary)
+                    ? const Icon(
+                  Icons.check_circle,
+                  color: AppColors.primary,
+                )
                     : null,
                 onTap: () {
                   onSelect(item);
@@ -299,8 +314,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       if (_dateNaissance == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content:
-            Text('Veuillez sélectionner votre date de naissance'),
+            content: Text(
+              'Veuillez sélectionner votre date de naissance',
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -331,6 +347,36 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       _pageController.previousPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  Future<void> _soumettre() async {
+    if (!_accepteCGU) { return; }
+
+    CsnLoaderOverlay.show(context, message: 'Création du compte…');
+
+    try {
+      // Simulation appel API inscription
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      if (!mounted) { return; }
+      CsnLoaderOverlay.hide(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Compte créé avec succès ! (Dashboard à venir)'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) { return; }
+      CsnLoaderOverlay.hide(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur : ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
       );
     }
   }
@@ -391,7 +437,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                         shape: BoxShape.circle,
                         color: AppColors.surfaceLight,
                         border: Border.all(
-                            color: AppColors.border, width: 2),
+                          color: AppColors.border,
+                          width: 2,
+                        ),
                         image: _profileImage != null
                             ? DecorationImage(
                           image: FileImage(_profileImage!),
@@ -400,8 +448,11 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                             : null,
                       ),
                       child: _profileImage == null
-                          ? const Icon(Icons.person_outline,
-                          size: 40, color: AppColors.textLight)
+                          ? const Icon(
+                        Icons.person_outline,
+                        size: 40,
+                        color: AppColors.textLight,
+                      )
                           : null,
                     ),
                     Positioned(
@@ -414,10 +465,15 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                           color: AppColors.primary,
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: Colors.white, width: 2),
+                            color: Colors.white,
+                            width: 2,
+                          ),
                         ),
-                        child: const Icon(Icons.camera_alt,
-                            color: Colors.white, size: 14),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 14,
+                        ),
                       ),
                     ),
                   ],
@@ -426,8 +482,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
             ),
             const SizedBox(height: 6),
             const Center(
-              child: Text('Photo de profil',
-                  style: AppTextStyles.labelLarge),
+              child: Text(
+                'Photo de profil',
+                style: AppTextStyles.labelLarge,
+              ),
             ),
             const SizedBox(height: 2),
             const Center(
@@ -474,7 +532,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(12),
@@ -496,8 +556,11 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                             : AppTextStyles.bodyMedium,
                       ),
                     ),
-                    const Icon(Icons.calendar_month_outlined,
-                        color: AppColors.textLight, size: 20),
+                    const Icon(
+                      Icons.calendar_month_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ],
                 ),
               ),
@@ -568,8 +631,11 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               },
               decoration: InputDecoration(
                 hintText: '••••••••••••',
-                prefixIcon: const Icon(Icons.lock_outline,
-                    color: AppColors.textLight, size: 20),
+                prefixIcon: const Icon(
+                  Icons.lock_outline,
+                  color: AppColors.textLight,
+                  size: 20,
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword
@@ -579,7 +645,8 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                     size: 20,
                   ),
                   onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword),
+                        () => _obscurePassword = !_obscurePassword,
+                  ),
                 ),
               ),
             ),
@@ -596,17 +663,21 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.2)),
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                ),
               ),
-              child: Row(
+              child: const Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline,
-                      size: 16, color: AppColors.primary),
-                  const SizedBox(width: 10),
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                  SizedBox(width: 10),
                   Expanded(
-                    child: RichText(
-                      text: const TextSpan(
+                    child: Text.rich(
+                      TextSpan(
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.primary,
@@ -615,12 +686,11 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                         children: [
                           TextSpan(
                             text: 'Votre carte numérique ',
-                            style:
-                            TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           TextSpan(
                             text:
-                            'avec QR code unique chiffré sera générée à la fin de l\'inscription.',
+                            "avec QR code unique chiffré sera générée à la fin de l'inscription.",
                           ),
                         ],
                       ),
@@ -682,10 +752,13 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               },
             ),
             const SizedBox(height: 24),
-            const Text('Contact d\'urgence', style: AppTextStyles.h4),
+            const Text(
+              "Contact d'urgence",
+              style: AppTextStyles.h4,
+            ),
             const SizedBox(height: 4),
             const Text(
-              'Personne à prévenir en cas d\'urgence médicale.',
+              "Personne à prévenir en cas d'urgence médicale.",
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -728,8 +801,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 8),
-            const Text('Sécurité & Confidentialité',
-                style: AppTextStyles.h3),
+            const Text(
+              'Sécurité & Confidentialité',
+              style: AppTextStyles.h3,
+            ),
             const SizedBox(height: 4),
             const Text(
               'Configurez la sécurité de votre carnet.',
@@ -752,19 +827,26 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                       color: AppColors.primaryLight,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.fingerprint,
-                        color: AppColors.primary, size: 24),
+                    child: const Icon(
+                      Icons.fingerprint,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Verrouillage biométrique',
-                            style: AppTextStyles.labelLarge),
+                        Text(
+                          'Verrouillage biométrique',
+                          style: AppTextStyles.labelLarge,
+                        ),
                         SizedBox(height: 2),
-                        Text('Empreinte digitale ou Face ID',
-                            style: AppTextStyles.bodySmall),
+                        Text(
+                          'Empreinte digitale ou Face ID',
+                          style: AppTextStyles.bodySmall,
+                        ),
                       ],
                     ),
                   ),
@@ -783,8 +865,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               children: [
                 Checkbox(
                   value: _accepteCGU,
-                  onChanged: (v) =>
-                      setState(() => _accepteCGU = v!),
+                  onChanged: (v) => setState(() => _accepteCGU = v!),
                   activeColor: AppColors.primary,
                 ),
                 Expanded(
@@ -798,10 +879,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                           height: 1.5,
                         ),
                         children: [
-                          TextSpan(text: 'J\'accepte les '),
+                          TextSpan(text: "J'accepte les "),
                           TextSpan(
-                            text:
-                            'Conditions Générales d\'Utilisation',
+                            text: "Conditions Générales d'Utilisation",
                             style: TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
@@ -836,8 +916,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
       ),
       child: Row(
         children: [
-          Text('Étape ${_currentStep + 1}/3',
-              style: AppTextStyles.bodyMedium),
+          Text(
+            'Étape ${_currentStep + 1}/3',
+            style: AppTextStyles.bodyMedium,
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
@@ -851,23 +933,11 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 }
               },
               child: Text(
-                _currentStep < 2
-                    ? 'Continuer →'
-                    : 'Créer mon carnet',
+                _currentStep < 2 ? 'Continuer →' : 'Créer mon carnet',
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _soumettre() {
-    if (!_accepteCGU) { return; }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Inscription en cours...'),
-        backgroundColor: AppColors.primary,
       ),
     );
   }
@@ -905,8 +975,11 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon,
-                color: AppColors.textLight, size: 20)
+                ? Icon(
+              prefixIcon,
+              color: AppColors.textLight,
+              size: 20,
+            )
                 : null,
           ),
         ),
@@ -928,7 +1001,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 14),
+              horizontal: 16,
+              vertical: 14,
+            ),
             decoration: BoxDecoration(
               color: AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(12),
@@ -937,11 +1012,13 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child:
-                  Text(value, style: AppTextStyles.bodyLarge),
+                  child: Text(value, style: AppTextStyles.bodyLarge),
                 ),
-                const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: AppColors.textLight, size: 20),
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.textLight,
+                  size: 20,
+                ),
               ],
             ),
           ),
