@@ -170,7 +170,7 @@ class _PatientProfilScreenState extends State<PatientProfilScreen> {
                     value: _biometrieActive,
                     onChanged: (v) =>
                         setState(() => _biometrieActive = v),
-                    activeThumbColor: AppColors.primary,
+                    activeTrackColor: AppColors.primary,
                   ),
                 ),
                 _SettingRow(

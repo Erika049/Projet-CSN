@@ -854,7 +854,7 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                     value: _biometrieActivee,
                     onChanged: (v) =>
                         setState(() => _biometrieActivee = v),
-                    activeThumbColor: AppColors.primary,
+                    activeTrackColor: AppColors.primary,
                   ),
                 ],
               ),

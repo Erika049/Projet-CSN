@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/theme.dart';
-import 'confirmation_passage_screen.dart';
+import 'agent_acceuil_confirmation_passage_screen.dart';
+
 
 /// Écran "Scanner la carte" (AGENT 15/41).
 ///
