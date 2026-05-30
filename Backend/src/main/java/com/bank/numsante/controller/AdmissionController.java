@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/admission")
+@RequestMapping("/api/v1/admission")
 @RequiredArgsConstructor
 public class AdmissionController {
 

@@ -6,5 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface PatientRepository extends JpaRepository<Patient, UUID> {
-    Optional<Patient> findByNomIgnoreCaseAndPrenomIgnoreCase(String nom, String prenom);
+    Optional<Patient> findByIdentifiant(String identifiant);
+    boolean existsByIdentifiant(String identifiant);
+    boolean existsByEmail(String email);
 }

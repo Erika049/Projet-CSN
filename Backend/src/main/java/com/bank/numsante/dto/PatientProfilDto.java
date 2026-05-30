@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Data
 @AllArgsConstructor
-public class PatientInfoDto {
+public class PatientProfilDto {
     private UUID idPatient;
     private String nom;
     private String prenom;
@@ -15,11 +15,13 @@ public class PatientInfoDto {
     private Character genre;
     private String groupeSanguin;
     private String telephone;
+    private String email;
+    private String adresse;
+    private String urgenceNom;
+    private String urgenceTelephone;
 
-    // Carte
+    // Carte numérique
+    private String qrCodeToken;
     private String carteStatut;
     private LocalDate carteExpiration;
-
-    // Dernier passage
-    private String dernierPassageDate;
 }

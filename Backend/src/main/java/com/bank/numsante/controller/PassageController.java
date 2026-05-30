@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/passages")
+@RequestMapping("/api/v1/passages")
 @RequiredArgsConstructor
 public class PassageController {
 

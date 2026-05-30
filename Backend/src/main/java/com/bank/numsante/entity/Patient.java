@@ -28,6 +28,22 @@ public class Patient {
     private Character genre;
     private String groupeSanguin;
     private String telephone;
+    private String email;
+    private String adresse;
+
+    // Authentification patient
+    @Column(unique = true)
+    private String identifiant;
+
+    @Column(name = "mot_de_passe_hash")
+    private String motDePasseHash;
+
+    // Contact urgence
+    @Column(name = "urgence_nom")
+    private String urgenceNom;
+
+    @Column(name = "urgence_telephone")
+    private String urgenceTelephone;
 
     @Column(name = "cle_publique_biometrique", columnDefinition = "TEXT")
     private String clePubliqueBiometrique;

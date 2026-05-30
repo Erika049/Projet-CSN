@@ -1,8 +1,6 @@
 package com.bank.numsante.controller;
 
-import com.bank.numsante.dto.BiometricLoginRequest;
-import com.bank.numsante.dto.BiometricRegistrationRequest;
-import com.bank.numsante.dto.LoginRequest;
+import com.bank.numsante.dto.*;
 import com.bank.numsante.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -13,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -21,22 +19,33 @@ public class AuthController {
 
     @Operation(summary = "Connexion professionnel (identifiant/mot de passe)")
     @PostMapping("/login-professionnel")
-    public ResponseEntity<Map<String, String>> loginProfessionnel(@Valid @RequestBody LoginRequest request) {
-        String token = authService.loginProfessionnel(request);
-        return ResponseEntity.ok(Map.of("token", token));
+    public ResponseEntity<LoginResponseDto> loginProfessionnel(
+            @Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.loginProfessionnel(request));
+    }
+
+    @Operation(summary = "Connexion patient (identifiant/mot de passe)")
+    @PostMapping("/login-patient")
+    public ResponseEntity<LoginResponseDto> loginPatient(
+            @Valid @RequestBody LoginPatientRequest request) {
+        return ResponseEntity.ok(authService.loginPatient(request));
     }
 
     @Operation(summary = "Enregistrement de la biométrie (clé publique)")
     @PostMapping("/enregistrer-biometrie")
-    public ResponseEntity<Map<String, String>> enregistrerBiometrie(@Valid @RequestBody BiometricRegistrationRequest request) {
+    public ResponseEntity<Map<String, String>> enregistrerBiometrie(
+            @Valid @RequestBody BiometricRegistrationRequest request) {
         authService.enregistrerBiometrie(request);
-        return ResponseEntity.ok(Map.of("statut", "success", "message", "Authentification biométrique configurée"));
+        return ResponseEntity.ok(Map.of(
+                "statut", "success",
+                "message", "Authentification biométrique configurée"
+        ));
     }
 
-    @Operation(summary = "Connexion biométrique (simulée)")
+    @Operation(summary = "Connexion biométrique")
     @PostMapping("/login-biometrique")
-    public ResponseEntity<Map<String, String>> loginBiometrique(@Valid @RequestBody BiometricLoginRequest request) {
-        String token = authService.loginBiometrique(request);
-        return ResponseEntity.ok(Map.of("token", token));
+    public ResponseEntity<LoginResponseDto> loginBiometrique(
+            @Valid @RequestBody BiometricLoginRequest request) {
+        return ResponseEntity.ok(authService.loginBiometrique(request));
     }
 }

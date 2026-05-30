@@ -1,7 +1,6 @@
 package com.bank.numsante.controller;
 
-import com.bank.numsante.dto.EnregistrementPatientRequest;
-import com.bank.numsante.dto.HistoriquePassageDto;
+import com.bank.numsante.dto.*;
 import com.bank.numsante.entity.Patient;
 import com.bank.numsante.exception.ResourceNotFoundException;
 import com.bank.numsante.repository.PatientRepository;
@@ -19,43 +18,58 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/patients")
+@RequestMapping("/api/v1/patients")
 @RequiredArgsConstructor
 public class PatientController {
 
     private final PatientService patientService;
     private final PatientRepository patientRepository;
 
+    @PostMapping("/enregistrer")
+    @Operation(summary = "Enregistrer un nouveau patient (inscription publique)")
+    public ResponseEntity<Map<String, Object>> enregistrerPatient(
+            @Valid @RequestBody EnregistrementPatientRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(patientService.enregistrerPatient(request));
+    }
+
+    @GetMapping("/{idPatient}/profil")
+    @Operation(summary = "Profil complet du patient")
+    public ResponseEntity<PatientProfilDto> getProfil(
+            @PathVariable UUID idPatient) {
+        return ResponseEntity.ok(patientService.getProfil(idPatient));
+    }
+
+    @GetMapping("/{idPatient}/historique")
+    @Operation(summary = "Historique médical d'un patient")
+    public ResponseEntity<List<HistoriquePassageDto>> getHistorique(
+            @PathVariable UUID idPatient) {
+        return ResponseEntity.ok(patientService.getHistorique(idPatient));
+    }
+
+    @GetMapping("/{idPatient}/passage-en-cours")
+    @Operation(summary = "Passage médical actif du patient")
+    public ResponseEntity<HistoriquePassageDto> getPassageEnCours(
+            @PathVariable UUID idPatient) {
+        HistoriquePassageDto passage = patientService.getPassageEnCours(idPatient);
+        if (passage == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(passage);
+    }
+
     @GetMapping("/{idPatient}/qr-code")
     @Operation(summary = "Générer l'image QR code du patient")
     public ResponseEntity<byte[]> genererQRCode(@PathVariable UUID idPatient) {
         Patient patient = patientRepository.findById(idPatient)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient non trouvé"));
-
         if (patient.getCarteNumerique() == null) {
             throw new RuntimeException("Aucune carte QR associée à ce patient");
         }
-
-        byte[] qrCodeImage = patientService.genererImageQR(patient.getCarteNumerique().getQrCodeToken());
-
+        byte[] qrCodeImage = patientService.genererImageQR(
+                patient.getCarteNumerique().getQrCodeToken());
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
                 .body(qrCodeImage);
-    }
-
-    @PostMapping("/enregistrer")
-    @Operation(summary = "Enregistrer un nouveau patient avec sa carte QR")
-    public ResponseEntity<Map<String, Object>> enregistrerPatient(
-            @Valid @RequestBody EnregistrementPatientRequest request,
-            Authentication authentication) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(patientService.enregistrerPatient(request, authentication.getName()));
-    }
-
-    @Operation(summary = "Historique médical d’un patient")
-    @GetMapping("/{idPatient}/historique")
-    public ResponseEntity<List<HistoriquePassageDto>> getHistorique(@PathVariable UUID idPatient,
-                                                                    Authentication authentication) {
-        return ResponseEntity.ok(patientService.getHistorique(idPatient, authentication.getName()));
     }
 }

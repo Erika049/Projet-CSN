@@ -1,9 +1,7 @@
 package com.bank.numsante.service;
 
 import com.bank.numsante.config.JwtTokenProvider;
-import com.bank.numsante.dto.BiometricLoginRequest;
-import com.bank.numsante.dto.BiometricRegistrationRequest;
-import com.bank.numsante.dto.LoginRequest;
+import com.bank.numsante.dto.*;
 import com.bank.numsante.entity.Patient;
 import com.bank.numsante.entity.PersonnelMedical;
 import com.bank.numsante.repository.PatientRepository;
@@ -21,23 +19,51 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public String loginProfessionnel(LoginRequest request) {
+    public LoginResponseDto loginProfessionnel(LoginRequest request) {
         PersonnelMedical personnel = personnelRepo.findByIdentifiantPro(request.getIdentifiantPro())
                 .orElseThrow(() -> new RuntimeException("Identifiants invalides"));
         if (!passwordEncoder.matches(request.getMotDePasse(), personnel.getMotDePasseHash())) {
             throw new RuntimeException("Identifiants invalides");
         }
-        return jwtTokenProvider.generateToken(personnel.getIdentifiantPro(), personnel.getRole());
+        String token = jwtTokenProvider.generateToken(
+                personnel.getIdentifiantPro(), personnel.getRole());
+        return new LoginResponseDto(
+                token,
+                personnel.getRole(),
+                String.valueOf(personnel.getIdPersonnel()),
+                personnel.getNom(),
+                personnel.getPrenom()
+        );
+    }
+
+    public LoginResponseDto loginPatient(LoginPatientRequest request) {
+        Patient patient = patientRepo.findByIdentifiant(request.getIdentifiant())
+                .orElseThrow(() -> new RuntimeException("Identifiants invalides"));
+        if (patient.getMotDePasseHash() == null ||
+                !passwordEncoder.matches(request.getMotDePasse(), patient.getMotDePasseHash())) {
+            throw new RuntimeException("Identifiants invalides");
+        }
+        String token = jwtTokenProvider.generateToken(
+                patient.getIdPatient().toString(), "patient");
+        return new LoginResponseDto(
+                token,
+                "patient",
+                patient.getIdPatient().toString(),
+                patient.getNom(),
+                patient.getPrenom()
+        );
     }
 
     public void enregistrerBiometrie(BiometricRegistrationRequest request) {
         if ("patient".equals(request.getTypeUtilisateur())) {
-            Patient patient = patientRepo.findById(java.util.UUID.fromString(request.getIdUtilisateur()))
+            Patient patient = patientRepo.findById(
+                            java.util.UUID.fromString(request.getIdUtilisateur()))
                     .orElseThrow(() -> new RuntimeException("Patient introuvable"));
             patient.setClePubliqueBiometrique(request.getClePubliqueAppareil());
             patientRepo.save(patient);
         } else if ("personnel".equals(request.getTypeUtilisateur())) {
-            PersonnelMedical personnel = personnelRepo.findById(Long.parseLong(request.getIdUtilisateur()))
+            PersonnelMedical personnel = personnelRepo.findById(
+                            Long.parseLong(request.getIdUtilisateur()))
                     .orElseThrow(() -> new RuntimeException("Personnel introuvable"));
             personnel.setClePubliqueAppareil(request.getClePubliqueAppareil());
             personnelRepo.save(personnel);
@@ -46,24 +72,38 @@ public class AuthService {
         }
     }
 
-    // Simulation de connexion biométrique : on vérifie que la clé publique existe, puis on génère un token.
-    public String loginBiometrique(BiometricLoginRequest request) {
+    public LoginResponseDto loginBiometrique(BiometricLoginRequest request) {
         // Chercher d'abord dans les patients
         try {
-            Patient patient = patientRepo.findById(java.util.UUID.fromString(request.getIdUtilisateur())).orElse(null);
+            Patient patient = patientRepo.findById(
+                            java.util.UUID.fromString(request.getIdUtilisateur()))
+                    .orElse(null);
             if (patient != null && patient.getClePubliqueBiometrique() != null) {
-                // Dans un cas réel, on vérifierait la signature avec la clé publique.
-                // Ici on simule en acceptant toute signature non vide.
                 if (!request.getSignatureDefi().isBlank()) {
-                    return jwtTokenProvider.generateToken(patient.getIdPatient().toString(), "PATIENT");
+                    String token = jwtTokenProvider.generateToken(
+                            patient.getIdPatient().toString(), "patient");
+                    return new LoginResponseDto(
+                            token, "patient",
+                            patient.getIdPatient().toString(),
+                            patient.getNom(), patient.getPrenom()
+                    );
                 }
             }
         } catch (IllegalArgumentException ignored) {}
+
         // Chercher dans le personnel
-        PersonnelMedical personnel = personnelRepo.findById(Long.parseLong(request.getIdUtilisateur()))
+        PersonnelMedical personnel = personnelRepo.findById(
+                        Long.parseLong(request.getIdUtilisateur()))
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
-        if (personnel.getClePubliqueAppareil() != null && !request.getSignatureDefi().isBlank()) {
-            return jwtTokenProvider.generateToken(personnel.getIdentifiantPro(), personnel.getRole());
+        if (personnel.getClePubliqueAppareil() != null &&
+                !request.getSignatureDefi().isBlank()) {
+            String token = jwtTokenProvider.generateToken(
+                    personnel.getIdentifiantPro(), personnel.getRole());
+            return new LoginResponseDto(
+                    token, personnel.getRole(),
+                    String.valueOf(personnel.getIdPersonnel()),
+                    personnel.getNom(), personnel.getPrenom()
+            );
         }
         throw new RuntimeException("Authentification biométrique échouée");
     }

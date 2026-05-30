@@ -19,6 +19,7 @@ public class LaboratoireService {
     private final PassageMedicalRepository passageRepo;
     private final PersonnelMedicalRepository personnelRepo;
     private final LogService logService;
+    private final NotificationService notificationService;
 
     public void ajouterExamen(ExamenRequest request, String username) {
         PassageMedical passage = passageRepo.findById(UUID.fromString(request.getIdPassage()))
@@ -36,5 +37,12 @@ public class LaboratoireService {
         logService.logAction(laborantin.getIdPersonnel(),
                 passage.getPatient().getIdPatient(),
                 "AJOUT_EXAMEN", passage.getIdPassage());
+
+        notificationService.creerNotification(
+                passage.getPatient().getIdPatient(),
+                "Nouveaux résultats d'examen",
+                request.getTypeExamen() + " publié par le laboratoire",
+                "examen"
+        );
     }
 }

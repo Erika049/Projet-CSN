@@ -22,12 +22,18 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sm -> sm
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/auth/login-professionnel",
-                                "/auth/login-biometrique",
-                                "/auth/enregistrer-biometrie",
+                                // Auth publique
+                                "/api/v1/auth/login-professionnel",
+                                "/api/v1/auth/login-patient",
+                                "/api/v1/auth/login-biometrique",
+                                "/api/v1/auth/enregistrer-biometrie",
+                                // Inscription patient publique
+                                "/api/v1/patients/enregistrer",
+                                // Swagger
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
@@ -36,7 +42,8 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

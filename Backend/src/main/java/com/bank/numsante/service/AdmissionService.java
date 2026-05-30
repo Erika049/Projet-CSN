@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
+import com.bank.numsante.repository.PassageMedicalRepository;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,19 +24,33 @@ public class AdmissionService {
     private final PassageMedicalRepository passageRepo;
     private final LogService logService;
     private final HttpServletRequest httpServletRequest;
+    private final NotificationService notificationService;
 
     public PatientInfoDto scanCarte(QrScanRequest request) {
         CarteNumerique carte = carteRepo.findByQrCodeToken(request.getQrCodeToken())
                 .orElseThrow(() -> new RuntimeException("Carte invalide ou inexistante"));
         Patient patient = carte.getPatient();
-        // Log
+
         logService.logAction(null, patient.getIdPatient(), "SCAN_QR_CODE", null);
+
+        // Dernier passage
+        List<PassageMedical> passages = passageRepo
+                .findByPatient_IdPatientOrderByDateAdmissionDesc(patient.getIdPatient());
+        String dernierPassage = passages.isEmpty() ? null :
+                passages.get(0).getDateAdmission()
+                        .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
         return new PatientInfoDto(
                 patient.getIdPatient(),
                 patient.getNom(),
                 patient.getPrenom(),
                 patient.getDateNaissance(),
-                patient.getGroupeSanguin()
+                patient.getGenre(),
+                patient.getGroupeSanguin(),
+                patient.getTelephone(),
+                carte.getStatut(),
+                carte.getExpireLe(),
+                dernierPassage
         );
     }
 
@@ -57,6 +73,14 @@ public class AdmissionService {
 
         logService.logAction(createur.getIdPersonnel(), patient.getIdPatient(),
                 "CREATION_PASSAGE", passage.getIdPassage());
+
+        notificationService.creerNotification(
+                patient.getIdPatient(),
+                "Admission enregistrée",
+                "Hôpital " + hopital.getNom() + " — " + request.getMotifVisite(),
+                "admission"
+        );
+
         return passage.getIdPassage();
     }
 }

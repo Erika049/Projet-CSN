@@ -16,11 +16,28 @@ public class EnregistrementPatientRequest {
     private LocalDate dateNaissance;
 
     @NotNull
-    private Character genre; // 'M' ou 'F'
+    private Character genre;
 
     private String groupeSanguin;
+
+    @NotBlank
     private String telephone;
 
-    @NotNull
-    private Long idHopital; // Hôpital où le patient est enregistré
+    @NotBlank
+    @Email
+    private String email;
+
+    private String adresse;
+
+    @NotBlank
+    @Size(min = 4)
+    private String identifiant;
+
+    @NotBlank
+    @Size(min = 12)
+    private String motDePasse;
+
+    // Contact urgence
+    private String urgenceNom;
+    private String urgenceTelephone;
 }
