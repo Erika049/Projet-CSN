@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
-import '../../../patient/presentation/screens/patient_shell.dart';
+import '../../../../core/utils/utils.dart';
+import '../../data/auth_api_service.dart';
 import '../../data/auth_local_service.dart';
-
+import '../../../patient/presentation/screens/patient_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,9 +17,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _identifiantController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthLocalService();
+  final _authApiService = AuthApiService();
+  final _authLocalService = AuthLocalService();
 
   bool _obscurePassword = true;
+
+  bool get _isOffline => AppMode().isOffline;
 
   @override
   void dispose() {
@@ -33,28 +37,25 @@ class _LoginScreenState extends State<LoginScreen> {
     CsnLoaderOverlay.show(context, message: 'Connexion en cours…');
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      const fakeToken = 'jwt_token_placeholder';
-      const fakeRole = 'patient';
-      const fakeName = 'Utilisateur';
-
-      await _authService.saveSession(
-        token: fakeToken,
-        role: fakeRole,
-        userName: fakeName,
+      await _authApiService.loginPatient(
+        identifiant: _identifiantController.text.trim(),
+        motDePasse: _passwordController.text,
       );
 
       if (!mounted) { return; }
-
       CsnLoaderOverlay.hide(context);
-      _showBiometricDialog();
+
+      if (_isOffline) {
+        _navigateToDashboard();
+      } else {
+        _showBiometricDialog();
+      }
     } catch (e) {
       if (!mounted) { return; }
       CsnLoaderOverlay.hide(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur de connexion : ${e.toString()}'),
+          content: Text(e.toString()),
           backgroundColor: AppColors.error,
         ),
       );
@@ -104,7 +105,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'La prochaine fois, connectez-vous avec votre empreinte digitale ou Face ID.',
+                'La prochaine fois, connectez-vous avec votre '
+                    'empreinte digitale ou Face ID.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium,
               ),
@@ -114,9 +116,42 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () async {
+                    // Validation biométrique réelle (empreinte / Face ID)
+                    final available = await BiometricHelper.isAvailable();
+                    if (available) {
+                      final ok = await BiometricHelper.authenticate(
+                        reason: 'Confirmez votre identité pour activer '
+                            'la connexion biométrique',
+                      );
+                      if (!ok) {
+                        if (!ctx.mounted) { return; }
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text('Biométrie non confirmée.'),
+                          ),
+                        );
+                        return;
+                      }
+                    }
+                    if (!ctx.mounted) { return; }
                     CsnLoaderOverlay.show(ctx,
                         message: 'Activation de la biométrie…');
-                    await _authService.enableBiometric();
+                    // Enregistrement de la clé biométrique côté backend
+                    final userId = await _authLocalService.getUserId();
+                    if (userId != null) {
+                      try {
+                        await _authApiService.enregistrerBiometrie(
+                          idUtilisateur: userId,
+                          typeUtilisateur: 'patient',
+                          clePubliqueAppareil: 'device-key-$userId',
+                        );
+                      } catch (_) {
+                        await _authLocalService.enableBiometric();
+                      }
+                    } else {
+                      await _authLocalService.enableBiometric();
+                    }
                     if (!ctx.mounted) { return; }
                     CsnLoaderOverlay.hide(ctx);
                     Navigator.pop(ctx);
@@ -145,10 +180,71 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _navigateToDashboard() {
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (_) => const PatientShell(),
+      MaterialPageRoute(builder: (_) => const PatientShell()),
+          (route) => false,
+    );
+  }
+
+  void _showForgotPassword() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.backgroundWhite,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.lock_reset_rounded,
+                    color: AppColors.primary, size: 30),
+              ),
+              const SizedBox(height: 16),
+              const Text('Réinitialiser le mot de passe',
+                  style: AppTextStyles.h3),
+              const SizedBox(height: 8),
+              const Text(
+                "Pour des raisons de sécurité médicale, la "
+                "réinitialisation se fait à l'accueil de votre "
+                "établissement partenaire, sur présentation d'une "
+                "pièce d'identité et de votre carte CSN.",
+                style: AppTextStyles.bodyMedium,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("J'ai compris"),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -174,27 +270,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         const SizedBox(height: 16),
 
-                        // Bouton retour
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceLight,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new,
-                              size: 16,
-                              color: AppColors.textDark,
+                        // Retour (masqué en offline car c'est le 1er écran)
+                        if (!_isOffline)
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceLight,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back_ios_new,
+                                size: 16,
+                                color: AppColors.textDark,
+                              ),
                             ),
                           ),
-                        ),
 
-                        const SizedBox(height: 32),
+                        SizedBox(height: _isOffline ? 48 : 32),
 
-                        // Logo
                         Container(
                           width: 48,
                           height: 48,
@@ -219,14 +315,52 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const Text('Connexion', style: AppTextStyles.h1),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Entrez vos identifiants pour accéder à votre carnet de santé.',
+                        Text(
+                          _isOffline
+                              ? 'Mode hors-réseau · Accès limité aux ordonnances.'
+                              : 'Entrez vos identifiants pour accéder à votre carnet de santé.',
                           style: AppTextStyles.bodyMedium,
                         ),
 
+                        // Bandeau hors-réseau
+                        if (_isOffline) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFB45309)
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.wifi_off_rounded,
+                                  size: 18,
+                                  color: Color(0xFFB45309),
+                                ),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Vous êtes hors du réseau hospitalier. '
+                                        'Seules les ordonnances sont accessibles.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFFB45309),
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
                         const SizedBox(height: 40),
 
-                        // Identifiant
                         const Text(
                           'IDENTIFIANT',
                           style: TextStyle(
@@ -239,10 +373,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _identifiantController,
-                          keyboardType: TextInputType.emailAddress,
+                          keyboardType: TextInputType.text,
                           textInputAction: TextInputAction.next,
                           decoration: const InputDecoration(
-                            hintText: 'email ou identifiant',
+                            hintText: 'votre identifiant',
                             prefixIcon: Icon(
                               Icons.person_outline,
                               size: 20,
@@ -258,7 +392,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Mot de passe
                         const Text(
                           'MOT DE PASSE',
                           style: TextStyle(
@@ -288,8 +421,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 size: 20,
                               ),
                               onPressed: () => setState(
-                                    () =>
-                                _obscurePassword = !_obscurePassword,
+                                    () => _obscurePassword = !_obscurePassword,
                               ),
                             ),
                           ),
@@ -304,30 +436,29 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
 
-                        const SizedBox(height: 8),
-
-                        // Mot de passe oublié
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(0, 36),
-                            ),
-                            child: Text(
-                              'Mot de passe oublié ?',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w500,
+                        if (!_isOffline) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _showForgotPassword,
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 36),
+                              ),
+                              child: Text(
+                                'Mot de passe oublié ?',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
 
                         const Spacer(),
 
-                        // Bouton connexion
                         SizedBox(
                           width: double.infinity,
                           height: 52,

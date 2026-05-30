@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
-import '../../data/patient_mock_service.dart';
+import '../../../../core/widgets/widgets.dart';
+import '../../../../features/auth/data/auth_local_service.dart';
+import '../../data/patient_api_service.dart';
 import '../../data/patient_models.dart' as models;
 
 class PatientNotificationsScreen extends StatefulWidget {
@@ -13,9 +15,12 @@ class PatientNotificationsScreen extends StatefulWidget {
 
 class _PatientNotificationsScreenState
     extends State<PatientNotificationsScreen> {
-  final _service = PatientMockService();
+  final _service = PatientApiService();
+  final _authService = AuthLocalService();
   List<models.Notification> _notifs = [];
   bool _loading = true;
+  String? _error;
+  String? _userId;
 
   @override
   void initState() {
@@ -24,12 +29,52 @@ class _PatientNotificationsScreenState
   }
 
   Future<void> _loadData() async {
-    final notifs = await _service.getNotifications();
-    if (!mounted) { return; }
     setState(() {
-      _notifs = notifs;
-      _loading = false;
+      _loading = true;
+      _error = null;
     });
+    try {
+      _userId = await _authService.getUserId();
+      if (_userId == null || _userId!.isEmpty) {
+        throw Exception('Session introuvable');
+      }
+      final notifs = await _service.getNotifications(_userId!);
+      if (!mounted) { return; }
+      setState(() {
+        _notifs = notifs;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) { return; }
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _toutLire() async {
+    if (_userId == null) { return; }
+    if (_notifs.every((n) => n.lue)) { return; }
+    try {
+      await _service.marquerToutesLues(_userId!);
+      await _loadData();
+    } catch (_) {
+      if (!mounted) { return; }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Action impossible pour le moment')),
+      );
+    }
+  }
+
+  Future<void> _marquerLue(models.Notification n) async {
+    if (n.lue) { return; }
+    try {
+      await _service.marquerLue(n.id);
+      await _loadData();
+    } catch (_) {
+      // silencieux — l'état sera resynchronisé au prochain chargement
+    }
   }
 
   IconData _iconFor(String type) {
@@ -89,7 +134,7 @@ class _PatientNotificationsScreenState
         title: const Text('Notifications'),
         actions: [
           TextButton(
-            onPressed: () {},
+            onPressed: _toutLire,
             child: const Text(
               'Tout lu',
               style: TextStyle(
@@ -100,20 +145,40 @@ class _PatientNotificationsScreenState
           ),
         ],
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        itemCount: _notifs.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (_, i) {
-          final n = _notifs[i];
-          return Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundWhite,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
+      body: _error != null
+          ? CsnEmptyState(
+              icon: Icons.cloud_off_rounded,
+              title: 'Impossible de charger',
+              message: 'Vérifiez votre connexion puis réessayez.',
+              onRetry: _loadData,
+            )
+          : _notifs.isEmpty
+              ? const CsnEmptyState(
+                  icon: Icons.notifications_off_outlined,
+                  title: 'Aucune notification',
+                  message: 'Vous êtes à jour ! Les alertes de vos '
+                      'examens et ordonnances apparaîtront ici.',
+                )
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _loadData,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    itemCount: _notifs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) {
+                      final n = _notifs[i];
+                      return GestureDetector(
+                        onTap: () => _marquerLue(n),
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.backgroundWhite,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
@@ -173,10 +238,12 @@ class _PatientNotificationsScreenState
                     ),
                   ),
               ],
-            ),
-          );
-        },
-      ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
     );
   }
 }

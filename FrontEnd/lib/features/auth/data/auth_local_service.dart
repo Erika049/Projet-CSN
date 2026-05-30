@@ -49,6 +49,13 @@ class AuthLocalService {
     return token != null && token.isNotEmpty;
   }
 
+  Future<void> saveUserId(String id) async {
+    await _storage.write(key: 'auth_user_id', value: id);
+  }
+
+  Future<String?> getUserId() async =>
+      _storage.read(key: 'auth_user_id');
+
   Future<void> logout() async {
     await _storage.deleteAll();
   }

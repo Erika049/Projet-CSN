@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
-import '../../data/patient_mock_service.dart';
+import '../../../../core/widgets/widgets.dart';
+import '../../../../features/auth/data/auth_local_service.dart';
+import '../../data/patient_api_service.dart';
 import '../../data/patient_models.dart';
 import 'patient_detail_ordonnance_screen.dart';
 
@@ -13,9 +15,11 @@ class PatientOrdonnancesScreen extends StatefulWidget {
 }
 
 class _PatientOrdonnancesScreenState extends State<PatientOrdonnancesScreen> {
-  final _service = PatientMockService();
+  final _service = PatientApiService();
+  final _authService = AuthLocalService();
   List<Ordonnance> _ordonnances = [];
   bool _loading = true;
+  String? _error;
   int _filterIndex = 0;
 
   final _filters = ['En cours', 'Toutes', 'Archives'];
@@ -27,12 +31,28 @@ class _PatientOrdonnancesScreenState extends State<PatientOrdonnancesScreen> {
   }
 
   Future<void> _loadData() async {
-    final ordonnances = await _service.getOrdonnances();
-    if (!mounted) { return; }
     setState(() {
-      _ordonnances = ordonnances;
-      _loading = false;
+      _loading = true;
+      _error = null;
     });
+    try {
+      final userId = await _authService.getUserId();
+      if (userId == null || userId.isEmpty) {
+        throw Exception('Session introuvable');
+      }
+      final ordonnances = await _service.getOrdonnances(userId);
+      if (!mounted) { return; }
+      setState(() {
+        _ordonnances = ordonnances;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) { return; }
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
   }
 
   List<Ordonnance> get _filtered {
@@ -144,24 +164,45 @@ class _PatientOrdonnancesScreenState extends State<PatientOrdonnancesScreen> {
 
             // Liste
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                itemCount: _filtered.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (_, i) {
-                  final o = _filtered[i];
-                  return _OrdonnanceCard(
-                    ordonnance: o,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            PatientDetailOrdonnanceScreen(ordonnance: o),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: _error != null
+                  ? CsnEmptyState(
+                      icon: Icons.cloud_off_rounded,
+                      title: 'Impossible de charger',
+                      message: 'Vérifiez votre connexion puis réessayez.',
+                      onRetry: _loadData,
+                    )
+                  : _filtered.isEmpty
+                      ? const CsnEmptyState(
+                          icon: Icons.medication_outlined,
+                          title: 'Aucune ordonnance',
+                          message:
+                              'Vos ordonnances délivrées par les médecins '
+                              'apparaîtront ici.',
+                        )
+                      : RefreshIndicator(
+                          color: AppColors.primary,
+                          onRefresh: _loadData,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                            itemCount: _filtered.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (_, i) {
+                              final o = _filtered[i];
+                              return _OrdonnanceCard(
+                                ordonnance: o,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        PatientDetailOrdonnanceScreen(
+                                            ordonnance: o),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
             ),
           ],
         ),
