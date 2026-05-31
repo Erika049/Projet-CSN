@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
+import 'login_pro_screen.dart';
 
 enum RolePro {
   medecin,
@@ -140,7 +141,14 @@ class _PosteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // Navigation vers login biométrique selon le rôle
+        // Navigation vers le parcours du rôle choisi.
+        // TODO: insérer le login biométrique en amont quand il sera prêt.
+        if (role == RolePro.accueil) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginProScreen()),
+          );
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

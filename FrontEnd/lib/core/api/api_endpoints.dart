@@ -36,7 +36,7 @@ class ApiEndpoints {
   static String toutLire(String id)         => '/notifications/patient/$id/tout-lire';
   static String marquerLue(String id)       => '/notifications/$id/lire';
 
-  // Admission
+  // Admission (utilisé par le parcours agent d'accueil)
   static const String scanCarte    = '/admission/scan-carte';
   static const String creerPassage = '/admission/creer-passage';
 
