@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
-import '../../data/patient_mock_service.dart';
+import '../../../../core/widgets/widgets.dart';
+import '../../../../features/auth/data/auth_local_service.dart';
+import '../../data/patient_api_service.dart';
 import '../../data/patient_models.dart';
 import 'patient_detail_passage_screen.dart';
 
@@ -13,9 +15,11 @@ class PatientHistoriqueScreen extends StatefulWidget {
 }
 
 class _PatientHistoriqueScreenState extends State<PatientHistoriqueScreen> {
-  final _service = PatientMockService();
+  final _service = PatientApiService();
+  final _authService = AuthLocalService();
   List<PassageMedical> _passages = [];
   bool _loading = true;
+  String? _error;
   int _filterIndex = 0;
 
   final _filters = ['Tous', 'Consultations', 'Urgences', 'Examens'];
@@ -27,13 +31,49 @@ class _PatientHistoriqueScreenState extends State<PatientHistoriqueScreen> {
   }
 
   Future<void> _loadData() async {
-    final passages = await _service.getHistorique();
-    if (!mounted) { return; }
     setState(() {
-      _passages = passages;
-      _loading = false;
+      _loading = true;
+      _error = null;
     });
+    try {
+      final userId = await _authService.getUserId();
+      if (userId == null || userId.isEmpty) {
+        throw Exception('Session introuvable');
+      }
+      final passages = await _service.getHistorique(userId);
+      if (!mounted) { return; }
+      setState(() {
+        _passages = passages;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) { return; }
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
   }
+
+  List<PassageMedical> get _filtered {
+    switch (_filterIndex) {
+      case 1:
+        return _passages
+            .where((p) => p.motifVisite.toLowerCase().contains('consult') ||
+                p.motifVisite.toLowerCase().contains('cardio'))
+            .toList();
+      case 2:
+        return _passages
+            .where((p) => p.motifVisite.toLowerCase().contains('urgence'))
+            .toList();
+      case 3:
+        return _passages.where((p) => p.examens.isNotEmpty).toList();
+      default:
+        return _passages;
+    }
+  }
+
+  int get _nbHopitaux => _passages.map((p) => p.hopital).toSet().length;
 
   Color _dotColor(String motif) {
     final m = motif.toLowerCase();
@@ -111,7 +151,8 @@ class _PatientHistoriqueScreenState extends State<PatientHistoriqueScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_passages.length} passages · 3 hôpitaux',
+                    '${_passages.length} passage${_passages.length > 1 ? 's' : ''} · '
+                    '$_nbHopitaux hôpital${_nbHopitaux > 1 ? 'aux' : ''}',
                     style: const TextStyle(
                       fontSize: 14,
                       color: AppColors.textMedium,
@@ -170,29 +211,48 @@ class _PatientHistoriqueScreenState extends State<PatientHistoriqueScreen> {
 
             // Timeline
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                itemCount: _passages.length,
-                itemBuilder: (_, i) {
-                  final p = _passages[i];
-                  final isLast = i == _passages.length - 1;
-                  return _TimelineItem(
-                    passage: p,
-                    isLast: isLast,
-                    dotColor: _dotColor(p.motifVisite),
-                    tagLabel: _tagLabel(p.motifVisite),
-                    tagBg: _tagBg(p.motifVisite),
-                    tagFg: _tagFg(p.motifVisite),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            PatientDetailPassageScreen(passage: p),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: _error != null
+                  ? CsnEmptyState(
+                      icon: Icons.cloud_off_rounded,
+                      title: 'Impossible de charger',
+                      message: 'Vérifiez votre connexion puis réessayez.',
+                      onRetry: _loadData,
+                    )
+                  : _filtered.isEmpty
+                      ? const CsnEmptyState(
+                          icon: Icons.history_rounded,
+                          title: 'Aucun passage',
+                          message:
+                              'Vos consultations et passages en établissement '
+                              'apparaîtront ici.',
+                        )
+                      : RefreshIndicator(
+                          color: AppColors.primary,
+                          onRefresh: _loadData,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                            itemCount: _filtered.length,
+                            itemBuilder: (_, i) {
+                              final p = _filtered[i];
+                              final isLast = i == _filtered.length - 1;
+                              return _TimelineItem(
+                                passage: p,
+                                isLast: isLast,
+                                dotColor: _dotColor(p.motifVisite),
+                                tagLabel: _tagLabel(p.motifVisite),
+                                tagBg: _tagBg(p.motifVisite),
+                                tagFg: _tagFg(p.motifVisite),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        PatientDetailPassageScreen(passage: p),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
             ),
           ],
         ),

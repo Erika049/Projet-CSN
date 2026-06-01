@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
-import '../../data/patient_mock_service.dart';
+import '../../../../features/auth/data/auth_local_service.dart';
+import '../../data/patient_api_service.dart';
 import '../../data/patient_models.dart';
 
 class PatientCarteScreen extends StatefulWidget {
@@ -15,9 +16,11 @@ class PatientCarteScreen extends StatefulWidget {
 
 class _PatientCarteScreenState extends State<PatientCarteScreen>
     with SingleTickerProviderStateMixin {
-  final _service = PatientMockService();
+  final _service = PatientApiService();
+  final _authService = AuthLocalService();
   Patient? _patient;
   bool _loading = true;
+  String? _error;
   bool _flipped = false;
 
   late AnimationController _flipController;
@@ -44,12 +47,28 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
   }
 
   Future<void> _loadData() async {
-    final patient = await _service.getPatient();
-    if (!mounted) { return; }
     setState(() {
-      _patient = patient;
-      _loading = false;
+      _loading = true;
+      _error = null;
     });
+    try {
+      final userId = await _authService.getUserId();
+      if (userId == null || userId.isEmpty) {
+        throw Exception('Session introuvable');
+      }
+      final patient = await _service.getProfil(userId);
+      if (!mounted) { return; }
+      setState(() {
+        _patient = patient;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) { return; }
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
   }
 
   void _flip() {
@@ -234,6 +253,23 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
             color: AppColors.primary,
             strokeWidth: 2,
           ),
+        ),
+      );
+    }
+
+    if (_patient == null) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: const Text('Ma carte numérique'),
+        ),
+        body: CsnEmptyState(
+          icon: Icons.cloud_off_rounded,
+          title: 'Carte indisponible',
+          message: 'Impossible de charger votre carte. '
+              'Vérifiez votre connexion puis réessayez.',
+          onRetry: _loadData,
         ),
       );
     }
@@ -748,16 +784,7 @@ class _CardBack extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      patient.carte.qrCodeToken,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMedium,
-                        fontFamily: 'monospace',
-                        letterSpacing: 0.4,
-                      ),
-                    ),
+
 
                     const Spacer(),
 

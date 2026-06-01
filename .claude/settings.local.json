@@ -2,7 +2,40 @@
   "permissions": {
     "allow": [
       "Bash(flutter pub:*)",
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "Bash(ipconfig)",
+      "Bash(findstr /i \"IPv4\")",
+      "Bash(curl -s http://192.168.1.180:8080/api/v1/network/check)",
+      "Bash(curl -s http://127.0.0.1:8080/api/v1/network/check)",
+      "Bash(curl -s http://localhost:8080/api/v1/network/check)",
+      "Bash(curl -sv http://192.168.1.180:8080/api/v1/network/check)",
+      "Bash(python *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X POST http://192.168.1.180:8080/api/v1/auth/login-patient -H \"Content-Type: application/json\" -d '{\"identifiant\":\"test\",\"motDePasse\":\"test\"}')",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X POST http://192.168.1.180:8080/api/v1/patients/enregistrer -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://192.168.1.180:8080/api/v1/network/check)",
+      "Bash(curl *)",
+      "Bash(echo \"=== Profil \\(sans token, doit etre 403/401\\) ===\")",
+      "Bash(echo \"=== Profil \\(avec token\\) ===\")",
+      "Bash(echo \"=== Historique ===\")",
+      "Bash(echo \"=== Ordonnances ===\")",
+      "Bash(echo \"=== Notifications ===\")",
+      "Bash(echo \"=== Enregistrer biometrie ===\")",
+      "Bash(echo \"=== Login biometrique \\(signature bidon, doit traiter sans 403\\) ===\")",
+      "Bash(flutter devices *)",
+      "Bash(grep -qiE \"Flutter run key|Syncing files|Application finished|Error|Exception|Built build\" /tmp/flutter_run.log)",
+      "Bash(break)",
+      "Bash(ping -n 11 127.0.0.1)",
+      "Bash(echo \"=== LOG \\(tail\\) ===\")",
+      "Bash(tail -30 /tmp/flutter_run.log)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(JAVA_HOME=\"/c/Program Files/Eclipse Adoptium/jdk-17.0.19.10-hotspot\" ./gradlew bootRun *)",
+      "Bash(seq 1 30)",
+      "Bash(grep -qiE \"Started .*Application|Tomcat started|APPLICATION FAILED|BUILD FAILED|Error\" /tmp/backend_run.log)",
+      "Bash(ping -n 6 127.0.0.1)",
+      "Bash(tail -15 /tmp/backend_run.log)",
+      "Bash(seq 1 40)",
+      "Bash(grep -qiE \"is being served at|Flutter run key|lib/main.dart.*available|Error|Exception|Failed\" /tmp/flutter_web.log)",
+      "Bash(tail -20 /tmp/flutter_web.log)"
     ]
   }
 }

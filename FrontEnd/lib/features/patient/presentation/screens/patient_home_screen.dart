@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/theme/theme.dart';
-import '../../data/patient_mock_service.dart';
+import '../../../../core/widgets/widgets.dart';
+import '../../data/patient_api_service.dart';
 import '../../data/patient_models.dart';
+import '../../../../features/auth/data/auth_local_service.dart';
 import 'patient_notifications_screen.dart';
+import 'patient_detail_passage_screen.dart';
 
 class PatientHomeScreen extends StatefulWidget {
-  const PatientHomeScreen({super.key});
+  /// Callback pour changer d'onglet dans le PatientShell.
+  final void Function(int index)? onSwitchTab;
+
+  const PatientHomeScreen({super.key, this.onSwitchTab});
 
   @override
   State<PatientHomeScreen> createState() => _PatientHomeScreenState();
 }
 
 class _PatientHomeScreenState extends State<PatientHomeScreen> {
-  final _service = PatientMockService();
+  final _service = PatientApiService();
+  final _authService = AuthLocalService();
 
+  String? _patientId;
   Patient? _patient;
   PassageMedical? _passageEnCours;
   int _notifCount = 0;
@@ -23,23 +31,39 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadPatientId();
+  }
+
+  Future<void> _loadPatientId() async {
+    _patientId = await _authService.getUserId();
+    if (_patientId != null) { _loadData(); }
   }
 
   Future<void> _loadData() async {
-    final results = await Future.wait([
-      _service.getPatient(),
-      _service.getPassageEnCours(),
-      _service.getNombreNotificationsNonLues(),
-    ]);
-
-    if (!mounted) { return; }
-    setState(() {
-      _patient = results[0] as Patient;
-      _passageEnCours = results[1] as PassageMedical?;
-      _notifCount = results[2] as int;
-      _loading = false;
-    });
+    if (_patientId == null) { return; }
+    try {
+      final results = await Future.wait([
+        _service.getProfil(_patientId!),
+        _service.getPassageEnCours(_patientId!),
+        _service.getNombreNonLues(_patientId!),
+      ]);
+      if (!mounted) { return; }
+      setState(() {
+        _patient = results[0] as Patient;
+        _passageEnCours = results[1] as PassageMedical?;
+        _notifCount = results[2] as int;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) { return; }
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   @override
@@ -239,7 +263,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'ID · ${patient.id.substring(0, 8)}···${patient.id.substring(patient.id.length - 6)}',
+                      'ID · ${patient.id.length > 14 ? '${patient.id.substring(0, 8)}···${patient.id.substring(patient.id.length - 6)}' : patient.id}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.white70,
@@ -256,7 +280,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: QrImageView(
-                  data: patient.carte.qrCodeToken,
+                  data: patient.carte.qrCodeToken.isNotEmpty
+                      ? patient.carte.qrCodeToken
+                      : patient.id,
                   version: QrVersions.auto,
                   size: 64,
                   backgroundColor: Colors.white,
@@ -339,7 +365,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Détecté il y a 4 min · ${passage.service}',
+                  '${passage.service}',
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textMedium,
@@ -358,7 +384,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Text(
-              'En ligne',
+              'En cours',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -380,36 +406,101 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       childAspectRatio: 1.6,
-      children: const [
+      children: [
         _GridCard(
           icon: Icons.qr_code_2_rounded,
           title: 'Ma carte QR',
           subtitle: 'Présenter à l\'accueil',
-          iconColor: Color(0xFF1A73E8),
-          iconBg: Color(0xFFE8F0FE),
+          iconColor: const Color(0xFF1A73E8),
+          iconBg: const Color(0xFFE8F0FE),
+          onTap: () => widget.onSwitchTab?.call(1),
         ),
         _GridCard(
           icon: Icons.history_rounded,
           title: 'Historique',
-          subtitle: '6 passages',
-          iconColor: Color(0xFF0B6E4F),
-          iconBg: Color(0xFFE6F4EA),
+          subtitle: 'Mes passages',
+          iconColor: const Color(0xFF0B6E4F),
+          iconBg: const Color(0xFFE6F4EA),
+          onTap: () => widget.onSwitchTab?.call(2),
         ),
         _GridCard(
           icon: Icons.medication_outlined,
           title: 'Mes ordonnances',
-          subtitle: '2 en cours',
-          iconColor: Color(0xFFB45309),
-          iconBg: Color(0xFFFEF3C7),
+          subtitle: 'Actives & archives',
+          iconColor: const Color(0xFFB45309),
+          iconBg: const Color(0xFFFEF3C7),
+          onTap: () => widget.onSwitchTab?.call(3),
         ),
         _GridCard(
           icon: Icons.local_hospital_outlined,
           title: 'Hôpitaux',
-          subtitle: '3 connectés',
-          iconColor: Color(0xFF7C3AED),
-          iconBg: Color(0xFFEDE9FE),
+          subtitle: 'Établissements',
+          iconColor: const Color(0xFF7C3AED),
+          iconBg: const Color(0xFFEDE9FE),
+          onTap: _showHopitauxSheet,
         ),
       ],
+    );
+  }
+
+  void _showHopitauxSheet() {
+    const hopitaux = [
+      ('Hôpital Général', 'Yaoundé · Cardiologie, Urgences, Labo'),
+      ('Clinique Pasteur', 'Douala · Médecine générale, Imagerie'),
+      ('Hôpital Central', 'Yaoundé · Pédiatrie, Maternité'),
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.backgroundWhite,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Établissements partenaires',
+                      style: AppTextStyles.h4),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...hopitaux.map(
+                (h) => ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDE9FE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.local_hospital_outlined,
+                        color: Color(0xFF7C3AED)),
+                  ),
+                  title: Text(h.$1, style: AppTextStyles.labelLarge),
+                  subtitle: Text(h.$2, style: AppTextStyles.bodySmall),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -423,7 +514,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           children: [
             const Text('Passage en cours', style: AppTextStyles.h4),
             TextButton(
-              onPressed: () {},
+              onPressed: () => widget.onSwitchTab?.call(2),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, 32),
@@ -440,82 +531,91 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           ],
         ),
         const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundWhite,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  PatientDetailPassageScreen(passage: passage),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      passage.motifVisite,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'En cours',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFB45309),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${passage.hopital} · ${passage.dateAdmission}, ${passage.heureAdmission}',
-                style: AppTextStyles.bodySmall,
-              ),
-              if (passage.constantes != null) ...[
-                const SizedBox(height: 16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundWhite,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (passage.constantes!.tension != null)
-                      _ConstanteItem(
-                        label: 'TENSION',
-                        value: passage.constantes!.tension!,
+                    Expanded(
+                      child: Text(
+                        passage.motifVisite,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
                       ),
-                    if (passage.constantes!.temperature != null)
-                      _ConstanteItem(
-                        label: 'TEMP.',
-                        value: passage.constantes!.temperature!,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
                       ),
-                    if (passage.constantes!.poids != null)
-                      _ConstanteItem(
-                        label: 'POIDS',
-                        value: passage.constantes!.poids!,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                    if (passage.constantes!.pouls != null)
-                      _ConstanteItem(
-                        label: 'POULS',
-                        value: passage.constantes!.pouls!,
+                      child: const Text(
+                        'En cours',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFB45309),
+                        ),
                       ),
+                    ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  '${passage.hopital} · ${passage.dateAdmission}, ${passage.heureAdmission}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                if (passage.constantes != null) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      if (passage.constantes!.tension != null)
+                        _ConstanteItem(
+                          label: 'TENSION',
+                          value: passage.constantes!.tension!,
+                        ),
+                      if (passage.constantes!.temperature != null)
+                        _ConstanteItem(
+                          label: 'TEMP.',
+                          value: passage.constantes!.temperature!,
+                        ),
+                      if (passage.constantes!.poids != null)
+                        _ConstanteItem(
+                          label: 'POIDS',
+                          value: passage.constantes!.poids!,
+                        ),
+                      if (passage.constantes!.pouls != null)
+                        _ConstanteItem(
+                          label: 'POULS',
+                          value: passage.constantes!.pouls!,
+                        ),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],
@@ -570,6 +670,7 @@ class _GridCard extends StatelessWidget {
   final String subtitle;
   final Color iconColor;
   final Color iconBg;
+  final VoidCallback? onTap;
 
   const _GridCard({
     required this.icon,
@@ -577,11 +678,15 @@ class _GridCard extends StatelessWidget {
     required this.subtitle,
     required this.iconColor,
     required this.iconBg,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.backgroundWhite,
@@ -622,6 +727,7 @@ class _GridCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }

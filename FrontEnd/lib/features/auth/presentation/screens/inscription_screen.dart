@@ -3,6 +3,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../../core/utils/utils.dart';
+import '../../data/auth_api_service.dart';
+import '../../../patient/presentation/screens/patient_shell.dart';
 
 class InscriptionScreen extends StatefulWidget {
   const InscriptionScreen({super.key});
@@ -14,6 +17,7 @@ class InscriptionScreen extends StatefulWidget {
 class _InscriptionScreenState extends State<InscriptionScreen> {
   int _currentStep = 0;
   final PageController _pageController = PageController();
+  final _authApiService = AuthApiService();
 
   final _formKey1 = GlobalKey<FormState>();
   final _formKey2 = GlobalKey<FormState>();
@@ -353,28 +357,102 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
 
   Future<void> _soumettre() async {
     if (!_accepteCGU) { return; }
+    if (_dateNaissance == null) { return; }
+
+    final identifiant = _identifiantController.text.trim();
+    final motDePasse = _passwordController.text;
 
     CsnLoaderOverlay.show(context, message: 'Création du compte…');
 
     try {
-      // Simulation appel API inscription
-      await Future.delayed(const Duration(milliseconds: 1500));
+      // 1) Inscription
+      await _authApiService.inscrirePatient(
+        nom: _nomController.text.trim().toUpperCase(),
+        prenom: _prenomController.text.trim(),
+        dateNaissance:
+        '${_dateNaissance!.year}-'
+            '${_dateNaissance!.month.toString().padLeft(2, '0')}-'
+            '${_dateNaissance!.day.toString().padLeft(2, '0')}',
+        genre: _genre == 'Masculin' ? 'M' : 'F',
+        groupeSanguin: _groupeSanguin,
+        telephone: _telephoneController.text.trim(),
+        email: _emailController.text.trim(),
+        adresse: _adresseController.text.trim(),
+        identifiant: identifiant,
+        motDePasse: motDePasse,
+        urgenceNom: _urgenceNomController.text.trim(),
+        urgenceTelephone: _urgenceTelController.text.trim(),
+      );
 
+      // 2) Auto-connexion (récupère token + id, sauvegarde la session)
+      final session = await _authApiService.loginPatient(
+        identifiant: identifiant,
+        motDePasse: motDePasse,
+      );
+      final userId = session['id'].toString();
+
+      // 3) Validation biométrique réelle si activée à l'étape 3
+      if (_biometrieActivee) {
+        if (!mounted) { return; }
+        CsnLoaderOverlay.hide(context);
+
+        final available = await BiometricHelper.isAvailable();
+        if (available) {
+          final ok = await BiometricHelper.authenticate(
+            reason: 'Confirmez votre identité pour activer '
+                'la connexion biométrique',
+          );
+          if (ok) {
+            try {
+              await _authApiService.enregistrerBiometrie(
+                idUtilisateur: userId,
+                typeUtilisateur: 'patient',
+                clePubliqueAppareil: 'device-key-$userId',
+              );
+            } catch (_) {
+              // Échec d'enregistrement biométrie — on continue quand même
+            }
+          } else if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Biométrie non confirmée — vous pourrez '
+                  "l'activer plus tard dans Profil.",
+                ),
+              ),
+            );
+          }
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Biométrie indisponible sur cet appareil — '
+                'activable à la première connexion compatible.',
+              ),
+            ),
+          );
+        }
+
+        if (!mounted) { return; }
+        CsnLoaderOverlay.show(context, message: 'Ouverture de votre carnet…');
+      }
+
+      // 4) Ouverture directe de la page patient
+      await Future.delayed(const Duration(milliseconds: 500));
       if (!mounted) { return; }
       CsnLoaderOverlay.hide(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Compte créé avec succès ! (Dashboard à venir)'),
-          backgroundColor: AppColors.success,
-        ),
+      AppMode().setOnline();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const PatientShell()),
+        (route) => false,
       );
     } catch (e) {
       if (!mounted) { return; }
       CsnLoaderOverlay.hide(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur : ${e.toString()}'),
+          content: Text(e.toString()),
           backgroundColor: AppColors.error,
         ),
       );
@@ -495,7 +573,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
             Row(
               children: [
                 Expanded(
@@ -524,7 +601,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               ],
             ),
             const SizedBox(height: 16),
-
             _buildLabel('DATE DE NAISSANCE'),
             const SizedBox(height: 6),
             GestureDetector(
@@ -566,7 +642,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
             Row(
               children: [
                 Expanded(
@@ -598,7 +673,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               ],
             ),
             const SizedBox(height: 16),
-
             _buildValidatedField(
               label: 'IDENTIFIANT SOUHAITÉ',
               controller: _identifiantController,
@@ -611,7 +685,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               },
             ),
             const SizedBox(height: 16),
-
             _buildLabel('MOT DE PASSE'),
             const SizedBox(height: 6),
             TextFormField(
@@ -656,7 +729,6 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               style: AppTextStyles.bodySmall,
             ),
             const SizedBox(height: 16),
-
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -686,7 +758,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                         children: [
                           TextSpan(
                             text: 'Votre carte numérique ',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           TextSpan(
                             text:
@@ -865,7 +939,8 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
               children: [
                 Checkbox(
                   value: _accepteCGU,
-                  onChanged: (v) => setState(() => _accepteCGU = v!),
+                  onChanged: (v) =>
+                      setState(() => _accepteCGU = v!),
                   activeColor: AppColors.primary,
                 ),
                 Expanded(
@@ -881,7 +956,8 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                         children: [
                           TextSpan(text: "J'accepte les "),
                           TextSpan(
-                            text: "Conditions Générales d'Utilisation",
+                            text:
+                            "Conditions Générales d'Utilisation",
                             style: TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
@@ -933,7 +1009,9 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 }
               },
               child: Text(
-                _currentStep < 2 ? 'Continuer →' : 'Créer mon carnet',
+                _currentStep < 2
+                    ? 'Continuer →'
+                    : 'Créer mon carnet',
               ),
             ),
           ),
@@ -1012,7 +1090,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(value, style: AppTextStyles.bodyLarge),
+                  child: Text(
+                    value,
+                    style: AppTextStyles.bodyLarge,
+                  ),
                 ),
                 const Icon(
                   Icons.keyboard_arrow_down_rounded,
