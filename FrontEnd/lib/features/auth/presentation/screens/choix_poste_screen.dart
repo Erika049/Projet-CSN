@@ -3,6 +3,7 @@ import '../../../../core/theme/theme.dart';
 import '../../domain/models/role_pro.dart';
 import '../../../agent_accueil/presentation/screens/agent_accueil_shell.dart';
 import '../../../infirmier/presentation/screens/infirmier_shell.dart';
+import '../../../pharmacien/presentation/screens/pharmacien_shell.dart';
 
 class ChoixPosteScreen extends StatelessWidget {
   const ChoixPosteScreen({super.key});
@@ -88,6 +89,9 @@ class _PosteCard extends StatelessWidget {
         break;
       case RolePro.accueil:
         destination = const AgentAccueilShell();
+        break;
+      case RolePro.pharmacien:
+        destination = const PharmacienShell();
         break;
       default:
         break;

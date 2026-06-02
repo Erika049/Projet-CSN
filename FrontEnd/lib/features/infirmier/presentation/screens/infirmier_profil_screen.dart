@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/theme.dart';
+import '../../../../features/auth/data/auth_local_service.dart';
+import '../../../../features/auth/presentation/screens/splash_screen.dart';
 import '../../../patient/presentation/widgets/patient_widgets.dart';
 import '../../data/infirmier_mock_data.dart';
 
@@ -61,8 +63,15 @@ class InfirmierProfilScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () =>
-                    Navigator.of(context).popUntil((r) => r.isFirst),
+                onPressed: () async {
+                  await AuthLocalService().logout();
+                  if (!context.mounted) return;
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SplashScreen()),
+                    (route) => false,
+                  );
+                },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.error,
                   side: const BorderSide(color: AppColors.errorLight, width: 1.5),

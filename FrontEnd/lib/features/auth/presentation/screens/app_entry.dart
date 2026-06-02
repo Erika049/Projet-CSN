@@ -8,6 +8,7 @@ import 'login_screen.dart';
 import '../../../patient/presentation/screens/patient_shell.dart';
 import '../../../agent_accueil/presentation/screens/agent_accueil_shell.dart';
 import '../../../infirmier/presentation/screens/infirmier_shell.dart';
+import '../../../pharmacien/presentation/screens/pharmacien_shell.dart';
 
 class AppEntry extends StatefulWidget {
   const AppEntry({super.key});
@@ -92,6 +93,9 @@ class _AppEntryState extends State<AppEntry> {
         break;
       case 'accueil':
         _goTo(const AgentAccueilShell());
+        break;
+      case 'pharmacien':
+        _goTo(const PharmacienShell());
         break;
       default:
         _goTo(const SplashScreen());

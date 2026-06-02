@@ -38,6 +38,13 @@ class AuthMockService {
       'nom': 'Mballa',
       'id': '4',
     },
+    'paul.essomba': {
+      'password': 'Test@1234',
+      'role': 'pharmacien',
+      'prenom': 'Paul',
+      'nom': 'Essomba',
+      'id': '5',
+    },
   };
 
   final _local = AuthLocalService();

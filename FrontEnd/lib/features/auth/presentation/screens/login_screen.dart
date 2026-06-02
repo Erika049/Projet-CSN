@@ -8,6 +8,7 @@ import '../../data/auth_mock_service.dart';
 import '../../../patient/presentation/screens/patient_shell.dart';
 import '../../../agent_accueil/presentation/screens/agent_accueil_shell.dart';
 import '../../../infirmier/presentation/screens/infirmier_shell.dart';
+import '../../../pharmacien/presentation/screens/pharmacien_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -201,6 +202,9 @@ class _LoginScreenState extends State<LoginScreen> {
         break;
       case 'accueil':
         destination = const AgentAccueilShell();
+        break;
+      case 'pharmacien':
+        destination = const PharmacienShell();
         break;
       case 'patient':
       default:
