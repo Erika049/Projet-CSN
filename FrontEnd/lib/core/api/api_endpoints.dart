@@ -6,7 +6,7 @@ class ApiEndpoints {
   // Si tu changes de réseau → mets à jour ici
   // Émulateur Android → utilise 10.0.2.2
   // ════════════════════════════════════════════
-  static const String baseUrl = 'http://192.168.1.180:8080/api/v1';
+  static const String baseUrl = 'http://172.22.211.187:8080/api/v1';
 
   // Vérification réseau
   static const String networkCheck = '/network/check';

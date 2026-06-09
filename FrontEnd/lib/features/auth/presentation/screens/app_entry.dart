@@ -5,7 +5,6 @@ import '../../data/auth_local_service.dart';
 import 'loader_screen.dart';
 import 'splash_screen.dart';
 import 'login_screen.dart';
-import '../../../patient/presentation/screens/patient_shell.dart';
 
 class AppEntry extends StatefulWidget {
   const AppEntry({super.key});
@@ -16,9 +15,8 @@ class AppEntry extends StatefulWidget {
 
 class _AppEntryState extends State<AppEntry> {
   // ════════════════════════════════════════════
-  // Vérification réseau hospitalier au démarrage.
-  // Mettre à `true` pour réactiver le blocage réseau.
-  // (Le code de vérification est conservé, juste désactivé.)
+  // Mettre à true pour réactiver le blocage réseau
+  // hospitalier au démarrage de l'application.
   // ════════════════════════════════════════════
   static const bool _networkCheckEnabled = false;
 
@@ -35,8 +33,8 @@ class _AppEntryState extends State<AppEntry> {
   Future<void> _init() async {
     setState(() => _step = _AppEntryStep.loading);
 
-    // Vérification réseau désactivée → flux normal direct
     if (!_networkCheckEnabled) {
+      // Réseau désactivé → flux normal direct
       await Future.delayed(const Duration(milliseconds: 2200));
       if (!mounted) { return; }
       AppMode().setOnline();
@@ -44,7 +42,7 @@ class _AppEntryState extends State<AppEntry> {
       return;
     }
 
-    // 1) Vérification réseau + délai minimum loader
+    // Vérification réseau + délai minimum loader en parallèle
     late NetworkStatus networkStatus;
     try {
       final results = await Future.wait([
@@ -58,14 +56,13 @@ class _AppEntryState extends State<AppEntry> {
 
     if (!mounted) { return; }
 
-    // 2) Réseau hospitalier → mode normal
     if (networkStatus == NetworkStatus.authorized) {
       AppMode().setOnline();
       await _navigateBySession();
       return;
     }
 
-    // 3) Pas sur le réseau hospitalier → afficher l'écran de blocage
+    // Réseau non autorisé ou injoignable → écran de blocage
     _networkStatus = networkStatus;
     setState(() => _step = _AppEntryStep.networkBlocked);
   }
@@ -76,20 +73,20 @@ class _AppEntryState extends State<AppEntry> {
 
     if (!mounted) { return; }
 
-    if (isLoggedIn && role == 'patient') {
-      _goTo(const PatientShell());
-    } else {
+    if (!isLoggedIn || role == null) {
       _goTo(const SplashScreen());
+      return;
     }
+
+    // Routing centralisé via LoginScreen.shellForRole
+    // → cohérent avec le routing post-login
+    _goTo(LoginScreen.shellForRole(role));
   }
 
-  void _onRetry() {
-    _init();
-  }
+  void _onRetry() => _init();
 
   void _onOfflineMode() {
     AppMode().setOffline();
-    // Toujours passer par le login en mode hors-réseau
     _goTo(const LoginScreen());
   }
 
@@ -123,7 +120,9 @@ class _AppEntryState extends State<AppEntry> {
 
 enum _AppEntryStep { loading, networkBlocked }
 
-// ==================== ÉCRAN BLOCAGE RÉSEAU ====================
+// ══════════════════════════════════════════════════════
+// Écran de blocage réseau
+// ══════════════════════════════════════════════════════
 class _NetworkBlockScreen extends StatelessWidget {
   final NetworkStatus status;
   final VoidCallback onRetry;
@@ -157,7 +156,7 @@ class _NetworkBlockScreen extends StatelessWidget {
               children: [
                 const Spacer(),
 
-                // Icône
+                // Icône selon le type d'erreur
                 Container(
                   width: 80,
                   height: 80,

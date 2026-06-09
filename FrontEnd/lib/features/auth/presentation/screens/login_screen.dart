@@ -5,9 +5,57 @@ import '../../../../core/utils/utils.dart';
 import '../../data/auth_api_service.dart';
 import '../../data/auth_local_service.dart';
 import '../../../patient/presentation/screens/patient_shell.dart';
+import '../../../medecin/presentation/screens/medecin_shell.dart';
+import '../../../agent_accueil/presentation/screens/agent_accueil_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  // ══════════════════════════════════════════════════════
+  // Routing centralisé par rôle — accessible depuis
+  // app_entry ET depuis _LoginScreenState.
+  // Pour ajouter un rôle : ajouter un case + créer le Shell.
+  // ══════════════════════════════════════════════════════
+  static Widget shellForRole(String role) {
+    switch (role) {
+      case 'patient':
+        return const PatientShell();
+      case 'medecin':
+        return const MedecinShell();
+      case 'accueil':
+        return const AgentAccueilShell();
+      case 'infirmier':
+        return const _ComingSoonShell(
+          role: 'infirmier',
+          label: 'Infirmier(e)',
+          icon: Icons.medical_services_outlined,
+        );
+      case 'laborantin':
+        return const _ComingSoonShell(
+          role: 'laborantin',
+          label: 'Laborantin',
+          icon: Icons.science_outlined,
+        );
+      case 'pharmacien':
+        return const _ComingSoonShell(
+          role: 'pharmacien',
+          label: 'Pharmacien',
+          icon: Icons.local_pharmacy_outlined,
+        );
+      case 'admin':
+        return const _ComingSoonShell(
+          role: 'admin',
+          label: 'Administrateur',
+          icon: Icons.admin_panel_settings_outlined,
+        );
+      default:
+        return _ComingSoonShell(
+          role: role,
+          label: role,
+          icon: Icons.person_outline,
+        );
+    }
+  }
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -19,7 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _authApiService = AuthApiService();
   final _authLocalService = AuthLocalService();
-
   bool _obscurePassword = true;
 
   bool get _isOffline => AppMode().isOffline;
@@ -31,38 +78,67 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // ══════════════════════════════════════════════════════
+  // Login unique — le backend renvoie le rôle directement.
+  // Essai 1 : login patient.
+  // Essai 2 : login professionnel si le 1er échoue.
+  // Le rôle dans la réponse détermine la redirection.
+  // ══════════════════════════════════════════════════════
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) { return; }
 
     CsnLoaderOverlay.show(context, message: 'Connexion en cours…');
 
     try {
-      await _authApiService.loginPatient(
-        identifiant: _identifiantController.text.trim(),
-        motDePasse: _passwordController.text,
-      );
+      Map<String, dynamic> response;
+
+      try {
+        response = await _authApiService.loginPatient(
+          identifiant: _identifiantController.text.trim(),
+          motDePasse: _passwordController.text,
+        );
+      } catch (_) {
+        response = await _authApiService.loginProfessionnel(
+          identifiantPro: _identifiantController.text.trim(),
+          motDePasse: _passwordController.text,
+        );
+      }
+
+      final role = response['role'] as String? ?? 'patient';
 
       if (!mounted) { return; }
       CsnLoaderOverlay.hide(context);
 
-      if (_isOffline) {
-        _navigateToDashboard();
+      if (role == 'patient' && !_isOffline) {
+        _showBiometricDialog(role: role);
       } else {
-        _showBiometricDialog();
+        _goToDashboard(role);
       }
     } catch (e) {
       if (!mounted) { return; }
       CsnLoaderOverlay.hide(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
+        const SnackBar(
+          content: Text(
+            'Identifiants incorrects ou compte introuvable.',
+          ),
           backgroundColor: AppColors.error,
         ),
       );
     }
   }
 
-  void _showBiometricDialog() {
+  void _goToDashboard(String role) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LoginScreen.shellForRole(role),
+      ),
+          (route) => false,
+    );
+  }
+
+  void _showBiometricDialog({required String role}) {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.backgroundWhite,
@@ -116,34 +192,37 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // Validation biométrique réelle (empreinte / Face ID)
-                    final available = await BiometricHelper.isAvailable();
+                    final available =
+                    await BiometricHelper.isAvailable();
                     if (available) {
                       final ok = await BiometricHelper.authenticate(
-                        reason: 'Confirmez votre identité pour activer '
-                            'la connexion biométrique',
+                        reason: 'Confirmez votre identité pour '
+                            'activer la connexion biométrique',
                       );
                       if (!ok) {
                         if (!ctx.mounted) { return; }
                         ScaffoldMessenger.of(ctx).showSnackBar(
                           const SnackBar(
-                            content:
-                                Text('Biométrie non confirmée.'),
+                            content: Text(
+                                'Biométrie non confirmée.'),
                           ),
                         );
                         return;
                       }
                     }
                     if (!ctx.mounted) { return; }
-                    CsnLoaderOverlay.show(ctx,
-                        message: 'Activation de la biométrie…');
-                    // Enregistrement de la clé biométrique côté backend
+                    CsnLoaderOverlay.show(
+                      ctx,
+                      message: 'Activation de la biométrie…',
+                    );
                     final userId = await _authLocalService.getUserId();
                     if (userId != null) {
                       try {
                         await _authApiService.enregistrerBiometrie(
                           idUtilisateur: userId,
-                          typeUtilisateur: 'patient',
+                          typeUtilisateur: role == 'patient'
+                              ? 'patient'
+                              : 'personnel',
                           clePubliqueAppareil: 'device-key-$userId',
                         );
                       } catch (_) {
@@ -155,7 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (!ctx.mounted) { return; }
                     CsnLoaderOverlay.hide(ctx);
                     Navigator.pop(ctx);
-                    _navigateToDashboard();
+                    _goToDashboard(role);
                   },
                   child: const Text('Activer'),
                 ),
@@ -167,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: OutlinedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    _navigateToDashboard();
+                    _goToDashboard(role);
                   },
                   child: const Text('Plus tard'),
                 ),
@@ -176,14 +255,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  void _navigateToDashboard() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const PatientShell()),
-          (route) => false,
     );
   }
 
@@ -219,18 +290,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.lock_reset_rounded,
-                    color: AppColors.primary, size: 30),
+                child: const Icon(
+                  Icons.lock_reset_rounded,
+                  color: AppColors.primary,
+                  size: 30,
+                ),
               ),
               const SizedBox(height: 16),
-              const Text('Réinitialiser le mot de passe',
-                  style: AppTextStyles.h3),
+              const Text(
+                'Réinitialiser le mot de passe',
+                style: AppTextStyles.h3,
+              ),
               const SizedBox(height: 8),
               const Text(
-                "Pour des raisons de sécurité médicale, la "
-                "réinitialisation se fait à l'accueil de votre "
-                "établissement partenaire, sur présentation d'une "
-                "pièce d'identité et de votre carte CSN.",
+                'Pour des raisons de sécurité médicale, la '
+                    'réinitialisation se fait à l\'accueil de votre '
+                    'établissement partenaire, sur présentation d\'une '
+                    'pièce d\'identité et de votre carte CSN.',
                 style: AppTextStyles.bodyMedium,
               ),
               const SizedBox(height: 24),
@@ -270,7 +346,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         const SizedBox(height: 16),
 
-                        // Retour (masqué en offline car c'est le 1er écran)
                         if (!_isOffline)
                           GestureDetector(
                             onTap: () => Navigator.pop(context),
@@ -279,7 +354,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               height: 40,
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceLight,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius:
+                                BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.arrow_back_ios_new,
@@ -295,7 +371,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
+                            color:
+                            Colors.white.withValues(alpha: 0.08),
                             border: Border.all(
                               color: const Color(0xFF1A73E8)
                                   .withValues(alpha: 0.3),
@@ -313,23 +390,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const SizedBox(height: 24),
 
-                        const Text('Connexion', style: AppTextStyles.h1),
+                        const Text(
+                          'Connexion',
+                          style: AppTextStyles.h1,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           _isOffline
-                              ? 'Mode hors-réseau · Accès limité aux ordonnances.'
-                              : 'Entrez vos identifiants pour accéder à votre carnet de santé.',
+                              ? 'Mode hors-réseau · '
+                              'Accès limité aux ordonnances.'
+                              : 'Patient ou personnel médical, '
+                              'entrez vos identifiants.',
                           style: AppTextStyles.bodyMedium,
                         ),
 
-                        // Bandeau hors-réseau
                         if (_isOffline) ...[
                           const SizedBox(height: 16),
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEF3C7),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius:
+                              BorderRadius.circular(12),
                               border: Border.all(
                                 color: const Color(0xFFB45309)
                                     .withValues(alpha: 0.3),
@@ -345,8 +427,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'Vous êtes hors du réseau hospitalier. '
-                                        'Seules les ordonnances sont accessibles.',
+                                    'Vous êtes hors du réseau '
+                                        'hospitalier. Seules les '
+                                        'ordonnances sont accessibles.',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFFB45309),
@@ -383,7 +466,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
+                            if (value == null ||
+                                value.trim().isEmpty) {
                               return 'Veuillez entrer votre identifiant';
                             }
                             return null;
@@ -421,7 +505,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 size: 20,
                               ),
                               onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword,
+                                    () => _obscurePassword =
+                                !_obscurePassword,
                               ),
                             ),
                           ),
@@ -448,7 +533,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               child: Text(
                                 'Mot de passe oublié ?',
-                                style: AppTextStyles.bodySmall.copyWith(
+                                style:
+                                AppTextStyles.bodySmall.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -476,6 +562,102 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// Placeholder affiché tant que le parcours n'est pas
+// encore développé. Remplacé quand le vrai Shell
+// est ajouté dans LoginScreen.shellForRole().
+// ══════════════════════════════════════════════════════
+class _ComingSoonShell extends StatelessWidget {
+  final String role;
+  final String label;
+  final IconData icon;
+
+  const _ComingSoonShell({
+    required this.role,
+    required this.label,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1A3D),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.16),
+                    ),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 36),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Bienvenue, $label',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: -0.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Votre interface est en cours de développement.\n'
+                      'Revenez bientôt !',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white60,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      await AuthLocalService().logout();
+                      AppMode().reset();
+                      if (!context.mounted) { return; }
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LoginScreen(),
+                        ),
+                            (route) => false,
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Text('Se déconnecter'),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
