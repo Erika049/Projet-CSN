@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: csn-api
+    runtime: java
+    buildCommand: "./gradlew bootJar"
+    startCommand: "java -jar build/libs/numsante-0.0.1-SNAPSHOT.jar"
+    envVars:
+      - key: DATABASE_URL
+        value: jdbc:postgresql://numsante_user:j3Kg8bjsxYakABa6vRayrnY75uAC1U0l@dpg-d8k09g0g4nts73crl1m0-a.frankfurt-postgres.render.com/numsante
+      - key: DATABASE_USERNAME
+        value: numsante_user
+      - key: DATABASE_PASSWORD
+        value: j3Kg8bjsxYakABa6vRayrnY75uAC1U0l
+      - key: JWT_SECRET
+        value: Y3NuX3NlY3JldF9rZXlfdWNhY19pY2FtXzIwMjZfY2FybmV0X3NhbnRlX251bWVyaXF1ZV92ZXJ5X2xvbmdfa2V5X21pbmltdW1fMjU2X2JpdHM=
+      - key: ALLOWED_NETWORKS
+        value: "127.0.0.1,0:0:0:0:0:0:0:1,172.22.211.,192.168.1.,10.0.2."
+      - key: PORT
+        value: "8080"
