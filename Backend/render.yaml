@@ -6,7 +6,7 @@ services:
     startCommand: "java -jar build/libs/numsante-0.0.1-SNAPSHOT.jar"
     envVars:
       - key: DATABASE_URL
-        value: jdbc:postgresql://numsante_user:j3Kg8bjsxYakABa6vRayrnY75uAC1U0l@dpg-d8k09g0g4nts73crl1m0-a.frankfurt-postgres.render.com/numsante
+        value: jdbc:postgresql://dpg-d8k09g0g4nts73crl1m0-a.frankfurt-postgres.render.com:5432/numsante
       - key: DATABASE_USERNAME
         value: numsante_user
       - key: DATABASE_PASSWORD
