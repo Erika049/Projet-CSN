@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/utils/utils.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../data/auth_local_service.dart';
+import 'biometric_screen.dart';
 import 'loader_screen.dart';
 import 'splash_screen.dart';
 import 'login_screen.dart';
@@ -15,8 +16,8 @@ class AppEntry extends StatefulWidget {
 
 class _AppEntryState extends State<AppEntry> {
   // ════════════════════════════════════════════
-  // Mettre à true pour réactiver le blocage réseau
-  // hospitalier au démarrage de l'application.
+  // Mettre à true pour réactiver le blocage
+  // réseau hospitalier au démarrage.
   // ════════════════════════════════════════════
   static const bool _networkCheckEnabled = false;
 
@@ -34,7 +35,6 @@ class _AppEntryState extends State<AppEntry> {
     setState(() => _step = _AppEntryStep.loading);
 
     if (!_networkCheckEnabled) {
-      // Réseau désactivé → flux normal direct
       await Future.delayed(const Duration(milliseconds: 2200));
       if (!mounted) { return; }
       AppMode().setOnline();
@@ -42,7 +42,6 @@ class _AppEntryState extends State<AppEntry> {
       return;
     }
 
-    // Vérification réseau + délai minimum loader en parallèle
     late NetworkStatus networkStatus;
     try {
       final results = await Future.wait([
@@ -62,7 +61,6 @@ class _AppEntryState extends State<AppEntry> {
       return;
     }
 
-    // Réseau non autorisé ou injoignable → écran de blocage
     _networkStatus = networkStatus;
     setState(() => _step = _AppEntryStep.networkBlocked);
   }
@@ -78,8 +76,24 @@ class _AppEntryState extends State<AppEntry> {
       return;
     }
 
-    // Routing centralisé via LoginScreen.shellForRole
-    // → cohérent avec le routing post-login
+    // ── Vérification biométrique si activée ──
+    final biometricEnabled = await _authService.isBiometricEnabled();
+
+    if (biometricEnabled) {
+      final available = await BiometricHelper.isAvailable();
+      if (available) {
+        final userName = await _authService.getUserName() ?? '';
+        if (!mounted) { return; }
+        // Afficher le BiometricScreen avec le beau design
+        _goTo(BiometricScreen(
+          userName: userName,
+          role: role,
+        ));
+        return;
+      }
+    }
+
+    // Pas de biométrie → dashboard direct
     _goTo(LoginScreen.shellForRole(role));
   }
 
@@ -156,7 +170,6 @@ class _NetworkBlockScreen extends StatelessWidget {
               children: [
                 const Spacer(),
 
-                // Icône selon le type d'erreur
                 Container(
                   width: 80,
                   height: 80,
@@ -244,7 +257,6 @@ class _NetworkBlockScreen extends StatelessWidget {
 
                 const Spacer(),
 
-                // Réessayer
                 SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -256,7 +268,6 @@ class _NetworkBlockScreen extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                // Mode hors-réseau
                 SizedBox(
                   width: double.infinity,
                   height: 52,
