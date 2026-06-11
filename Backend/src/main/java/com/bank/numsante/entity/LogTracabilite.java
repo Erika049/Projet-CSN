@@ -16,11 +16,11 @@ public class LogTracabilite {
     @Column(name = "id_log")
     private Long idLog;
 
-    @Column(name = "id_personnel")
+    @Column(name = "id_utilisateur")
     private Long idUtilisateur;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_personnel",
+    @JoinColumn(name = "id_utilisateur",
             insertable = false,
             updatable = false)
     private PersonnelMedical personnel;
