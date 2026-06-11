@@ -1,154 +1,126 @@
 class PatientDuJour {
-  final String id;
+  final String idPassage;
+  final String idPatient;
   final String nom;
   final String prenom;
-  final String motif;
+  final String motifVisite;
   final String heure;
-  final String statut; // en_attente | en_cours | termine | a_venir | urgence
-  final String? idPassage;
+  final String statut;
+  final String groupeSanguin;
+  final int age;
 
-  const PatientDuJour({
-    required this.id,
+  PatientDuJour({
+    required this.idPassage,
+    required this.idPatient,
     required this.nom,
     required this.prenom,
-    required this.motif,
+    required this.motifVisite,
     required this.heure,
     required this.statut,
-    this.idPassage,
-  });
-
-  String get nomComplet => '$prenom $nom';
-  String get initiales =>
-      '${prenom.isNotEmpty ? prenom[0] : ''}${nom.isNotEmpty ? nom[0] : ''}'
-          .toUpperCase();
-}
-
-class DossierPatient {
-  final String id;
-  final String nom;
-  final String prenom;
-  final String dateNaissance;
-  final String genre;
-  final String groupeSanguin;
-  final String telephone;
-  final int age;
-  final int nbHopitaux;
-  final int nbPassages;
-  final int nbOrdonnancesActives;
-  final PassageActif? passageActif;
-  final List<Antecedent> antecedents;
-  final List<DernierPassage> derniersPassages;
-
-  const DossierPatient({
-    required this.id,
-    required this.nom,
-    required this.prenom,
-    required this.dateNaissance,
-    required this.genre,
     required this.groupeSanguin,
-    required this.telephone,
     required this.age,
-    required this.nbHopitaux,
-    required this.nbPassages,
-    required this.nbOrdonnancesActives,
-    this.passageActif,
-    required this.antecedents,
-    required this.derniersPassages,
   });
 
   String get nomComplet => '$prenom $nom';
   String get initiales =>
-      '${prenom.isNotEmpty ? prenom[0] : ''}${nom.isNotEmpty ? nom[0] : ''}'
-          .toUpperCase();
+      '${prenom.isNotEmpty ? prenom[0] : ''}'
+          '${nom.isNotEmpty ? nom[0] : ''}'.toUpperCase();
+
+  factory PatientDuJour.fromJson(Map<String, dynamic> json) {
+    return PatientDuJour(
+      idPassage:     json['idPassage']?.toString()     ?? '',
+      idPatient:     json['idPatient']?.toString()     ?? '',
+      nom:           json['nom']?.toString()           ?? '',
+      prenom:        json['prenom']?.toString()        ?? '',
+      motifVisite:   json['motifVisite']?.toString()   ?? '',
+      heure:         json['heure']?.toString()         ?? '',
+      statut:        json['statut']?.toString()        ?? '',
+      groupeSanguin: json['groupeSanguin']?.toString() ?? '',
+      age:           (json['age'] as num?)?.toInt()    ?? 0,
+    );
+  }
 }
 
-class PassageActif {
-  final String id;
-  final String motif;
-  final String heure;
-  final String? tension;
-  final String? temperature;
-  final String? poids;
-  final String? pouls;
-  final String? diagnostic;
-  final String? prescription;
+class StatsDuJour {
+  final int total;
+  final int enCours;
+  final int urgences;
 
-  const PassageActif({
-    required this.id,
-    required this.motif,
-    required this.heure,
-    this.tension,
-    this.temperature,
-    this.poids,
-    this.pouls,
-    this.diagnostic,
-    this.prescription,
+  StatsDuJour({
+    required this.total,
+    required this.enCours,
+    required this.urgences,
   });
+
+  factory StatsDuJour.fromJson(Map<String, dynamic> json) {
+    return StatsDuJour(
+      total:    (json['total']    as num?)?.toInt() ?? 0,
+      enCours:  (json['en_cours'] as num?)?.toInt() ?? 0,
+      urgences: (json['urgences'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
 
-class Antecedent {
-  final String titre;
-  final String date;
-  final String type; // allergie | maladie | examen
-  final String tone; // danger | warning | primary
-
-  const Antecedent({
-    required this.titre,
-    required this.date,
-    required this.type,
-    required this.tone,
-  });
-}
-
-class DernierPassage {
-  final String titre;
-  final String hopital;
-  final String date;
-
-  const DernierPassage({
-    required this.titre,
-    required this.hopital,
-    required this.date,
-  });
-}
-
-class ConsultationData {
+class PassageDetail {
   final String idPassage;
-  final String diagnostic;
-  final String prescription;
-  final List<MedicamentConsult> medicaments;
-  final List<String> examens;
-  final bool cloturerPassage;
+  final String nomPatient;
+  final String prenomPatient;
+  final String idPatient;
+  final String hopital;
+  final String motifVisite;
+  final String dateAdmission;
+  final String statut;
+  final Map<String, dynamic>? constantesVitales;
+  final String? diagnostic;
+  final String? prescriptionOrdonnance;
 
-  const ConsultationData({
+  PassageDetail({
     required this.idPassage,
-    required this.diagnostic,
-    required this.prescription,
-    required this.medicaments,
-    required this.examens,
-    required this.cloturerPassage,
+    required this.nomPatient,
+    required this.prenomPatient,
+    required this.idPatient,
+    required this.hopital,
+    required this.motifVisite,
+    required this.dateAdmission,
+    required this.statut,
+    this.constantesVitales,
+    this.diagnostic,
+    this.prescriptionOrdonnance,
   });
-}
 
-class MedicamentConsult {
-  final String nom;
-  final String posologie;
+  String get nomComplet => '$prenomPatient $nomPatient';
+  bool get estEnCours => statut == 'en_cours';
 
-  const MedicamentConsult({
-    required this.nom,
-    required this.posologie,
-  });
+  factory PassageDetail.fromJson(Map<String, dynamic> json) {
+    return PassageDetail(
+      idPassage:     json['idPassage']?.toString()     ?? '',
+      nomPatient:    json['nomPatient']?.toString()    ?? '',
+      prenomPatient: json['prenomPatient']?.toString() ?? '',
+      idPatient:     json['idPatient']?.toString()     ?? '',
+      hopital:       json['hopital']?.toString()       ?? '',
+      motifVisite:   json['motifVisite']?.toString()   ?? '',
+      dateAdmission: json['dateAdmission']?.toString() ?? '',
+      statut:        json['statut']?.toString()        ?? '',
+      constantesVitales:
+      json['constantesVitales'] as Map<String, dynamic>?,
+      diagnostic:            json['diagnostic']?.toString(),
+      prescriptionOrdonnance:
+      json['prescriptionOrdonnance']?.toString(),
+    );
+  }
 }
 
 class ActivitePro {
+  final String idPassage;
   final String type;
   final String label;
   final String patient;
   final String detail;
   final String tone;
-  final DateTime date;
+  final String date;
 
-  const ActivitePro({
+  ActivitePro({
+    required this.idPassage,
     required this.type,
     required this.label,
     required this.patient,
@@ -156,4 +128,16 @@ class ActivitePro {
     required this.tone,
     required this.date,
   });
+
+  factory ActivitePro.fromJson(Map<String, dynamic> json) {
+    return ActivitePro(
+      idPassage: json['idPassage']?.toString() ?? '',
+      type:      json['type']?.toString()      ?? '',
+      label:     json['label']?.toString()     ?? '',
+      patient:   json['patient']?.toString()   ?? '',
+      detail:    json['detail']?.toString()    ?? '',
+      tone:      json['tone']?.toString()      ?? 'primary',
+      date:      json['date']?.toString()      ?? '',
+    );
+  }
 }

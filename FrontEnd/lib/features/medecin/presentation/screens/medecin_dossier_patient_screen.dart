@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
-import '../../data/medecin_mock_service.dart';
+import '../../data/medecin_api_service.dart';
 import '../../data/medecin_models.dart';
 import 'medecin_consultation_screen.dart';
 
@@ -18,9 +18,10 @@ class MedecinDossierPatientScreen extends StatefulWidget {
 
 class _MedecinDossierPatientScreenState
     extends State<MedecinDossierPatientScreen> {
-  final _service = MedecinMockService();
-  DossierPatient? _dossier;
-  bool _loading = true;
+  final _service = MedecinApiService();
+  PassageDetail? _passage;
+  bool    _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -29,36 +30,28 @@ class _MedecinDossierPatientScreenState
   }
 
   Future<void> _loadData() async {
-    final dossier = await _service.getDossierPatient(widget.patient.id);
-    if (!mounted) { return; }
-    setState(() {
-      _dossier = dossier;
-      _loading = false;
-    });
-  }
-
-  Color _antecedentColor(String tone) {
-    switch (tone) {
-      case 'danger': return AppColors.error;
-      case 'warning': return const Color(0xFFB45309);
-      default: return AppColors.primary;
+    setState(() { _loading = true; _error = null; });
+    try {
+      final passage = await _service.getPassageDetail(
+          widget.patient.idPassage);
+      if (!mounted) { return; }
+      setState(() {
+        _passage = passage;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) { return; }
+      setState(() {
+        _loading = false;
+        _error   = 'Impossible de charger le dossier.';
+      });
     }
   }
 
-  Color _antecedentBg(String tone) {
-    switch (tone) {
-      case 'danger': return AppColors.errorLight;
-      case 'warning': return const Color(0xFFFEF3C7);
-      default: return AppColors.primaryLight;
-    }
-  }
-
-  IconData _antecedentIcon(String type) {
-    switch (type) {
-      case 'allergie': return Icons.warning_amber_rounded;
-      case 'maladie': return Icons.monitor_heart_outlined;
-      default: return Icons.science_outlined;
-    }
+  String _constante(String key) {
+    if (_passage?.constantesVitales == null) { return '—'; }
+    return _passage!.constantesVitales![key]
+        ?.toString() ?? '—';
   }
 
   @override
@@ -67,62 +60,101 @@ class _MedecinDossierPatientScreenState
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(
-            color: AppColors.primary,
-            strokeWidth: 2,
+              color: AppColors.primary, strokeWidth: 2),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios,
+                size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.cloud_off_rounded,
+                  size: 48, color: AppColors.textLight),
+              const SizedBox(height: 12),
+              Text(_error!,
+                  style: const TextStyle(
+                      color: AppColors.textMedium)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                  onPressed: _loadData,
+                  child: const Text('Réessayer')),
+            ],
           ),
         ),
       );
     }
 
-    final d = _dossier!;
+    final p = _passage!;
 
     return Scaffold(
       body: Column(
         children: [
-          // ── Hero header gradient ──
+          // ── Header gradient ──────────────────────────
           Container(
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF0B3D91), Color(0xFF1A73E8)],
+                colors: [
+                  Color(0xFF0B3D91),
+                  Color(0xFF1A73E8)
+                ],
               ),
             ),
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+                padding: const EdgeInsets.fromLTRB(
+                    20, 12, 20, 18),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment:
                       MainAxisAlignment.spaceBetween,
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () =>
+                              Navigator.pop(context),
                           child: const Icon(
-                            Icons.arrow_back_ios,
-                            color: Colors.white,
-                            size: 18,
-                          ),
+                              Icons.arrow_back_ios,
+                              color: Colors.white,
+                              size: 18),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
+                          padding:
+                          const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(999),
+                            color: p.estEnCours
+                                ? const Color(0xFFFEF3C7)
+                                : AppColors.successLight,
+                            borderRadius:
+                            BorderRadius.circular(999),
                           ),
-                          child: const Text(
-                            'Passage en cours',
+                          child: Text(
+                            p.estEnCours
+                                ? 'En cours'
+                                : 'Terminé',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFFB45309),
+                              color: p.estEnCours
+                                  ? const Color(0xFFB45309)
+                                  : const Color(0xFF1E7E34),
                             ),
                           ),
                         ),
@@ -134,15 +166,15 @@ class _MedecinDossierPatientScreenState
                     Row(
                       children: [
                         Container(
-                          width: 60,
-                          height: 60,
+                          width: 60, height: 60,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: Colors.white
+                                .withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: Center(
                             child: Text(
-                              d.initiales,
+                              widget.patient.initiales,
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w700,
@@ -158,17 +190,20 @@ class _MedecinDossierPatientScreenState
                             CrossAxisAlignment.start,
                             children: [
                               Text(
-                                d.nomComplet,
+                                p.nomComplet,
                                 style: const TextStyle(
                                   fontSize: 20,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight:
+                                  FontWeight.w700,
                                   color: Colors.white,
                                   letterSpacing: -0.4,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${d.genre == 'M' ? '♂' : '♀'} · ${d.age} ans · Groupe ${d.groupeSanguin} · ${d.telephone}',
+                                '${widget.patient.age} ans · '
+                                    '${widget.patient.groupeSanguin} · '
+                                    '${p.hopital}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.white70,
@@ -185,9 +220,8 @@ class _MedecinDossierPatientScreenState
                     Wrap(
                       spacing: 6,
                       children: [
-                        _Chip('${d.nbHopitaux} hôpitaux'),
-                        _Chip('${d.nbPassages} passages'),
-                        _Chip('${d.nbOrdonnancesActives} ordonnances'),
+                        _Chip(p.hopital),
+                        _Chip(p.motifVisite),
                       ],
                     ),
                   ],
@@ -196,249 +230,193 @@ class _MedecinDossierPatientScreenState
             ),
           ),
 
-          // ── Contenu scrollable ──
+          // ── Contenu scrollable ───────────────────────
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
+              padding: const EdgeInsets.fromLTRB(
+                  18, 14, 18, 28),
               child: Column(
                 children: [
                   // Passage actif
-                  if (d.passageActif != null) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.backgroundWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.primary
-                                .withValues(alpha: 0.3),
-                          ),
+                  if (p.estEnCours) ...[
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundWhite,
+                        borderRadius:
+                        BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.primary
+                              .withValues(alpha: 0.3),
                         ),
-                        child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                          children: [
-                            // Header passage
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(14),
+                      ),
+                      child: Column(
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding:
+                            const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
                               color: AppColors.primaryLight,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'PASSAGE ACTUEL',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight:
-                                            FontWeight.w700,
-                                            color: AppColors.primary,
-                                            letterSpacing: 0.6,
-                                          ),
+                              borderRadius:
+                              const BorderRadius
+                                  .vertical(
+                                  top:
+                                  Radius.circular(
+                                      16)),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment
+                                        .start,
+                                    children: [
+                                      const Text(
+                                        'PASSAGE ACTUEL',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight:
+                                          FontWeight.w700,
+                                          color: AppColors
+                                              .primary,
+                                          letterSpacing:
+                                          0.6,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          d.passageActif!.motif,
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight:
-                                            FontWeight.w700,
-                                            color:
-                                            AppColors.textDark,
-                                          ),
-                                        ),
-                                        Text(
-                                          "Aujourd'hui · ${d.passageActif!.heure}",
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color:
-                                            AppColors.textMedium,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            MedecinConsultationScreen(
-                                              patient: widget.patient,
-                                              passageActif:
-                                              d.passageActif!,
-                                            ),
                                       ),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      padding:
-                                      const EdgeInsets.symmetric(
+                                      const SizedBox(
+                                          height: 4),
+                                      Text(
+                                        p.motifVisite,
+                                        style:
+                                        const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight:
+                                          FontWeight.w700,
+                                          color: AppColors
+                                              .textDark,
+                                        ),
+                                      ),
+                                      Text(
+                                        p.dateAdmission
+                                            .substring(
+                                            0,
+                                            p.dateAdmission
+                                                .length >
+                                                16
+                                                ? 16
+                                                : p.dateAdmission
+                                                .length),
+                                        style:
+                                        const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors
+                                              .textMedium,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () =>
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              MedecinConsultationScreen(
+                                                patient:
+                                                widget.patient,
+                                                passage: p,
+                                              ),
+                                        ),
+                                      ),
+                                  style: ElevatedButton
+                                      .styleFrom(
+                                    padding:
+                                    const EdgeInsets
+                                        .symmetric(
                                         horizontal: 14,
-                                        vertical: 10,
-                                      ),
-                                    ),
-                                    child: const Text('Consulter ▸'),
+                                        vertical: 10),
                                   ),
-                                ],
-                              ),
+                                  child: const Text(
+                                      'Consulter ▸'),
+                                ),
+                              ],
                             ),
+                          ),
 
-                            // Constantes vitales
+                          // Constantes vitales
+                          if (p.constantesVitales != null)
                             Padding(
-                              padding: const EdgeInsets.all(14),
+                              padding:
+                              const EdgeInsets.all(14),
                               child: Row(
                                 children: [
-                                  if (d.passageActif!.tension != null)
-                                    _ConstanteMini(
+                                  _ConstanteMini(
                                       label: 'Tension',
-                                      value: d.passageActif!.tension!,
-                                    ),
-                                  if (d.passageActif!.temperature !=
-                                      null)
-                                    _ConstanteMini(
+                                      value: _constante(
+                                          'tension')),
+                                  _ConstanteMini(
                                       label: 'Temp.',
-                                      value:
-                                      d.passageActif!.temperature!,
-                                    ),
-                                  if (d.passageActif!.poids != null)
-                                    _ConstanteMini(
+                                      value: _constante(
+                                          'temperature')),
+                                  _ConstanteMini(
                                       label: 'Poids',
-                                      value: d.passageActif!.poids!,
-                                    ),
-                                  if (d.passageActif!.pouls != null)
-                                    _ConstanteMini(
+                                      value: _constante(
+                                          'poids')),
+                                  _ConstanteMini(
                                       label: 'Pouls',
-                                      value: d.passageActif!.pouls!,
-                                    ),
+                                      value: _constante(
+                                          'frequence_cardiaque')),
                                 ],
                               ),
                             ),
-                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Diagnostic si existant
+                  if (p.diagnostic != null) ...[
+                    _SectionCard(
+                      title: 'Diagnostic',
+                      child: Padding(
+                        padding:
+                        const EdgeInsets.only(top: 8),
+                        child: Text(
+                          p.diagnostic!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textDark,
+                            height: 1.55,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
                   ],
 
-                  // Antécédents
-                  _SectionCard(
-                    title: 'Antécédents notables',
-                    trailing: "Tout l'historique →",
-                    child: Column(
-                      children: d.antecedents.map((a) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: _antecedentBg(a.tone),
-                            borderRadius: BorderRadius.circular(10),
+                  // Prescription si existante
+                  if (p.prescriptionOrdonnance != null) ...[
+                    _SectionCard(
+                      title: 'Prescription',
+                      child: Padding(
+                        padding:
+                        const EdgeInsets.only(top: 8),
+                        child: Text(
+                          p.prescriptionOrdonnance!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textDark,
+                            height: 1.55,
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _antecedentIcon(a.type),
-                                size: 16,
-                                color: _antecedentColor(a.tone),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      a.titre,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color:
-                                        _antecedentColor(a.tone),
-                                      ),
-                                    ),
-                                    Text(
-                                      a.date,
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.textMedium,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
+                        ),
+                      ),
                     ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Derniers passages
-                  _SectionCard(
-                    title: '3 derniers passages',
-                    child: Column(
-                      children: d.derniersPassages.map((p) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.backgroundWhite,
-                            borderRadius: BorderRadius.circular(10),
-                            border:
-                            Border.all(color: AppColors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F3F4),
-                                  borderRadius:
-                                  BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.local_hospital_outlined,
-                                  size: 14,
-                                  color: AppColors.textMedium,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      p.titre,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textDark,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${p.hopital} · ${p.date}',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.textMedium,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -449,7 +427,7 @@ class _MedecinDossierPatientScreenState
   }
 }
 
-// ==================== WIDGETS LOCAUX ====================
+// ── Widgets locaux ─────────────────────────────────────
 
 class _Chip extends StatelessWidget {
   final String text;
@@ -459,15 +437,12 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 4,
-      ),
+          horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-        ),
+            color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Text(
         text,
@@ -521,13 +496,11 @@ class _ConstanteMini extends StatelessWidget {
 }
 
 class _SectionCard extends StatelessWidget {
-  final String title;
-  final String? trailing;
-  final Widget child;
+  final String  title;
+  final Widget  child;
 
   const _SectionCard({
     required this.title,
-    this.trailing,
     required this.child,
   });
 
@@ -544,29 +517,14 @@ class _SectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
-                ),
-              ),
-              if (trailing != null)
-                Text(
-                  trailing!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-            ],
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textDark,
+            ),
           ),
-          const SizedBox(height: 12),
           child,
         ],
       ),

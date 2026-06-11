@@ -24,6 +24,16 @@ class ApiEndpoints {
   static String passageEnCours(String id) => '/patients/$id/passage-en-cours';
   static String qrCode(String id)         => '/patients/$id/qr-code';
 
+  // ── Médecin ──────────────────────────────────────────
+  static const String medecinPatientsDuJour =
+      '/medecin/patients-du-jour';
+  static const String medecinStatsDuJour =
+      '/medecin/stats-du-jour';
+  static const String medecinActivite =
+      '/medecin/activite';
+  static String medecinPassageDetail(String id) =>
+      '/medecin/passages/$id';
+
   // Ordonnances
   static String ordonnances(String id)       => '/ordonnances/patient/$id';
   static String ordonnancesActives(String id) => '/ordonnances/patient/$id/actives';
