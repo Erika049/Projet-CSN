@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_endpoints.dart';
@@ -13,7 +14,12 @@ class ApiClient {
         baseUrl: ApiEndpoints.baseUrl,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Accept': 'application/json; charset=utf-8',
+        },
+        responseDecoder: (responseBytes, options, responseBody) =>
+            utf8.decode(responseBytes, allowMalformed: true),
       ),
     );
     _setupInterceptors();
@@ -38,8 +44,11 @@ class ApiClient {
           handler.next(options);
         },
         onError: (error, handler) async {
-          // Token expiré → rediriger vers login
-          if (error.response?.statusCode == 401) {
+          // Token expiré sur un appel authentifié → vider la session
+          // Ne pas toucher la session sur les endpoints de login eux-mêmes
+          final path = error.requestOptions.path;
+          final isLoginEndpoint = path.contains('/auth/login');
+          if (error.response?.statusCode == 401 && !isLoginEndpoint) {
             await _storage.deleteAll();
           }
           handler.next(error);

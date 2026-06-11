@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface PersonnelMedicalRepository extends JpaRepository<PersonnelMedical, Long> {
     Optional<PersonnelMedical> findByIdentifiantPro(String identifiantPro);
+    boolean existsByIdentifiantPro(String identifiantPro);
 }

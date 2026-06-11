@@ -35,7 +35,11 @@
       "Bash(tail -15 /tmp/backend_run.log)",
       "Bash(seq 1 40)",
       "Bash(grep -qiE \"is being served at|Flutter run key|lib/main.dart.*available|Error|Exception|Failed\" /tmp/flutter_web.log)",
-      "Bash(tail -20 /tmp/flutter_web.log)"
+      "Bash(tail -20 /tmp/flutter_web.log)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\OscarPapiChoco\\\\StudioProjects\\\\Projet-CSN\\\\BackEnd\\\\src\\\\main\\\\java\\\\com\\\\bank\\\\numsante\\\\\" -Recurse -File | Select-Object FullName | Sort-Object FullName | ForEach-Object { $_.FullName })",
+      "Bash(mvn compile *)",
+      "Bash(echo \"EXIT:$?\")",
+      "PowerShell(cd \"C:\\\\Users\\\\OscarPapiChoco\\\\StudioProjects\\\\Projet-CSN\\\\BackEnd\"; .\\\\mvnw.cmd compile -q 2>&1; Write-Host \"EXIT:$LASTEXITCODE\")"
     ]
   }
 }

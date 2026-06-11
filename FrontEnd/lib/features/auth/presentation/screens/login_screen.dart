@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../core/utils/utils.dart';
+import '../../../../core/api/api_exception.dart';
 import '../../data/auth_api_service.dart';
 import '../../data/auth_local_service.dart';
 import '../../data/auth_mock_service.dart';
@@ -36,6 +37,27 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _loginAuto({
+    required String identifiant,
+    required String motDePasse,
+  }) async {
+    try {
+      await _authApiService.loginProfessionnel(
+        identifiantPro: identifiant,
+        motDePasse: motDePasse,
+      );
+      return; // succès professionnel
+    } on ApiException catch (e) {
+      // Uniquement si le compte n'existe pas comme professionnel → essai patient
+      if (e.statusCode != 401) rethrow;
+    }
+
+    await _authApiService.loginPatient(
+      identifiant: identifiant,
+      motDePasse: motDePasse,
+    );
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) { return; }
 
@@ -48,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
           motDePasse: _passwordController.text,
         );
       } else {
-        await _authApiService.loginPatient(
+        await _loginAuto(
           identifiant: _identifiantController.text.trim(),
           motDePasse: _passwordController.text,
         );
@@ -57,7 +79,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) { return; }
       CsnLoaderOverlay.hide(context);
 
-      if (_isOffline) {
+      final role = await _authLocalService.getRole();
+      if (!mounted) { return; }
+
+      if (_isOffline || role != 'patient') {
         await _navigateToDashboard();
       } else {
         _showBiometricDialog();

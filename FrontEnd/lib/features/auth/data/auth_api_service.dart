@@ -19,17 +19,18 @@ class AuthApiService {
           'motDePasse': motDePasse,
         },
       );
-      final data = response.data as Map<String, dynamic>;
-      // Sauvegarder la session localement
+      final data = Map<String, dynamic>.from(response.data as Map);
       await _local.saveSession(
-        token: data['token'],
-        role: data['role'],
+        token: data['token']?.toString() ?? '',
+        role: data['role']?.toString() ?? '',
         userName: '${data['prenom']} ${data['nom']}',
       );
-      await _local.saveUserId(data['id'].toString());
+      await _local.saveUserId(data['id']?.toString() ?? '');
       return data;
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
+    } catch (e) {
+      throw ApiException(message: e.toString());
     }
   }
 

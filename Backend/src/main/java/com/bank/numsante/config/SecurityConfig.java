@@ -47,7 +47,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/api-docs/**",
-                                "/actuator/**"
+                                "/actuator/**",
+                                "/api/v1/util/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -65,10 +66,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
+        // Autorise toutes les origines (JWT = header, pas cookie → pas besoin de allowCredentials)
+        config.setAllowedOrigins(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+        config.setExposedHeaders(List.of("Authorization"));
+        // allowCredentials intentionnellement absent : incompatible avec allowedOrigins("*")
+        // et inutile pour JWT Bearer token
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

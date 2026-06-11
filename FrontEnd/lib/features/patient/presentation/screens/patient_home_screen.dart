@@ -222,12 +222,12 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1A73E8), Color(0xFF0B3D91)],
+          colors: [AppColors.primary, AppColors.primaryDark],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1A73E8).withValues(alpha: 0.35),
+            color: AppColors.primary.withValues(alpha: 0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -411,7 +411,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           icon: Icons.qr_code_2_rounded,
           title: 'Ma carte QR',
           subtitle: 'Présenter à l\'accueil',
-          iconColor: const Color(0xFF1A73E8),
+          iconColor: AppColors.primary,
           iconBg: const Color(0xFFE8F0FE),
           onTap: () => widget.onSwitchTab?.call(1),
         ),

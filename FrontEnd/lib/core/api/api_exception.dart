@@ -15,9 +15,18 @@ class ApiException implements Exception {
         statusCode: error.response?.statusCode,
       );
     }
-    if (error?.type?.toString().contains('connect') == true) {
-      return const ApiException(
-        message: 'Impossible de joindre le serveur. Vérifiez votre connexion.',
+    // Erreur réseau : connexion refusée, timeout, pas de réseau…
+    final typeStr  = error?.type?.toString() ?? '';
+    final errStr   = error?.error?.toString() ?? '';
+    final urlStr   = '${error?.requestOptions?.baseUrl ?? ''}${error?.requestOptions?.path ?? ''}';
+    final isNetworkError = typeStr.contains('connect') ||
+        typeStr.contains('timeout') ||
+        typeStr.contains('unknown') ||
+        errStr.contains('SocketException');
+    if (isNetworkError) {
+      // Message de debug pour identifier la cause exacte
+      return ApiException(
+        message: 'Réseau : $typeStr | $errStr | URL: $urlStr',
         statusCode: 0,
       );
     }

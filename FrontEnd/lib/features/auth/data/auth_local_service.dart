@@ -39,6 +39,10 @@ class AuthLocalService {
     await _storage.write(key: _keyBiometric, value: 'true');
   }
 
+  Future<void> disableBiometric() async {
+    await _storage.delete(key: _keyBiometric);
+  }
+
   Future<bool> isBiometricEnabled() async {
     final val = await _storage.read(key: _keyBiometric);
     return val == 'true';

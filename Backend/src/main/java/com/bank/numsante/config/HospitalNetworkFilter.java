@@ -3,12 +3,10 @@ package com.bank.numsante.config;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -21,19 +19,13 @@ public class HospitalNetworkFilter implements Filter {
             "/swagger-ui",
             "/api-docs",
             "/v3/api-docs",
-            "/api/v1/auth/login-patient",
-            "/api/v1/auth/login-biometrique",
-            "/api/v1/auth/enregistrer-biometrie",
+            "/api/v1/auth/",
             "/api/v1/patients/",
             "/api/v1/ordonnances/",
             "/api/v1/notifications/patient/"
     );
 
-    // Endpoint de vérification réseau
     private static final String NETWORK_CHECK = "/api/v1/network/check";
-
-    @Value("${hospital.allowed-networks:127.0.0.1,0:0:0:0:0:0:0:1,192.168.1.,10.0.2.,10.0.0.,172.16.}")
-    private String allowedNetworksRaw;
 
     @Override
     public void doFilter(ServletRequest request,
@@ -48,7 +40,7 @@ public class HospitalNetworkFilter implements Filter {
 
         // Endpoint de vérification réseau — toujours répondre
         if (path.equals(NETWORK_CHECK)) {
-            boolean isOnNetwork = isAllowedNetwork(clientIp);
+            boolean isOnNetwork = isPrivateNetwork(clientIp);
             httpResponse.setStatus(HttpServletResponse.SC_OK);
             httpResponse.setContentType("application/json");
             httpResponse.getWriter().write(
@@ -66,8 +58,8 @@ public class HospitalNetworkFilter implements Filter {
             return;
         }
 
-        // Vérifier le réseau pour les autres routes
-        if (!isAllowedNetwork(clientIp)) {
+        // Vérifier que la requête vient d'un réseau privé (RFC 1918)
+        if (!isPrivateNetwork(clientIp)) {
             httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
             httpResponse.setContentType("application/json");
             httpResponse.getWriter().write(
@@ -82,11 +74,35 @@ public class HospitalNetworkFilter implements Filter {
         chain.doFilter(request, response);
     }
 
-    private boolean isAllowedNetwork(String clientIp) {
-        List<String> allowedNetworks = Arrays.asList(
-                allowedNetworksRaw.split(","));
-        return allowedNetworks.stream()
-                .anyMatch(network -> clientIp.startsWith(network.trim()));
+    /**
+     * Accepte toute adresse IP privée (RFC 1918) et les loopbacks.
+     * Pas d'IP codée en dur : fonctionne sur n'importe quel réseau local.
+     */
+    private boolean isPrivateNetwork(String ip) {
+        if (ip == null) return false;
+
+        // Loopback IPv4 / IPv6
+        if (ip.equals("127.0.0.1") || ip.equals("::1")
+                || ip.equals("0:0:0:0:0:0:0:1")) return true;
+
+        String[] parts = ip.split("\\.");
+        if (parts.length != 4) return false;
+
+        try {
+            int a = Integer.parseInt(parts[0]);
+            int b = Integer.parseInt(parts[1]);
+
+            // 10.0.0.0/8
+            if (a == 10) return true;
+            // 172.16.0.0/12  (172.16 – 172.31)
+            if (a == 172 && b >= 16 && b <= 31) return true;
+            // 192.168.0.0/16
+            if (a == 192 && b == 168) return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        return false;
     }
 
     private String getClientIp(HttpServletRequest request) {

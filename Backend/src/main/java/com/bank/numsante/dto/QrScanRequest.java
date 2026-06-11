@@ -7,6 +7,4 @@ import lombok.Data;
 public class QrScanRequest {
     @NotBlank
     private String qrCodeToken;
-    @NotNull
-    private Long idHopital;
 }

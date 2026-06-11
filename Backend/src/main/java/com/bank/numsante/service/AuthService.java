@@ -2,6 +2,7 @@ package com.bank.numsante.service;
 
 import com.bank.numsante.config.JwtTokenProvider;
 import com.bank.numsante.dto.*;
+import com.bank.numsante.exception.BadCredentialsException;
 import com.bank.numsante.entity.Patient;
 import com.bank.numsante.entity.PersonnelMedical;
 import com.bank.numsante.repository.PatientRepository;
@@ -21,9 +22,9 @@ public class AuthService {
 
     public LoginResponseDto loginProfessionnel(LoginRequest request) {
         PersonnelMedical personnel = personnelRepo.findByIdentifiantPro(request.getIdentifiantPro())
-                .orElseThrow(() -> new RuntimeException("Identifiants invalides"));
+                .orElseThrow(() -> new BadCredentialsException("Identifiants invalides"));
         if (!passwordEncoder.matches(request.getMotDePasse(), personnel.getMotDePasseHash())) {
-            throw new RuntimeException("Identifiants invalides");
+            throw new BadCredentialsException("Identifiants invalides");
         }
         String token = jwtTokenProvider.generateToken(
                 personnel.getIdentifiantPro(), personnel.getRole());
@@ -38,10 +39,10 @@ public class AuthService {
 
     public LoginResponseDto loginPatient(LoginPatientRequest request) {
         Patient patient = patientRepo.findByIdentifiant(request.getIdentifiant())
-                .orElseThrow(() -> new RuntimeException("Identifiants invalides"));
+                .orElseThrow(() -> new BadCredentialsException("Identifiants invalides"));
         if (patient.getMotDePasseHash() == null ||
                 !passwordEncoder.matches(request.getMotDePasse(), patient.getMotDePasseHash())) {
-            throw new RuntimeException("Identifiants invalides");
+            throw new BadCredentialsException("Identifiants invalides");
         }
         String token = jwtTokenProvider.generateToken(
                 patient.getIdPatient().toString(), "patient");

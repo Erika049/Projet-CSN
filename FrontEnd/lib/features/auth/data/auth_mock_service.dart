@@ -6,7 +6,7 @@ import 'auth_local_service.dart';
 
 class AuthMockService {
   // ── Basculer ici pour activer / désactiver le mock ─────────────────────────
-  static const bool enabled = true;
+  static const bool enabled = false;
 
   // ── Comptes de test ────────────────────────────────────────────────────────
   static const _users = <String, Map<String, String>>{
