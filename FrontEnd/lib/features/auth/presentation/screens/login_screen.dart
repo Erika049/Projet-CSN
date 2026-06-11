@@ -1,3 +1,4 @@
+import 'package:carnet_sante_numerique/features/laborantin/presentation/laborantin_shell.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
@@ -26,11 +27,7 @@ class LoginScreen extends StatefulWidget {
           icon: Icons.medical_services_outlined,
         );
       case 'laborantin':
-        return const _ComingSoonShell(
-          role: 'laborantin',
-          label: 'Laborantin',
-          icon: Icons.science_outlined,
-        );
+        return const LaborantinShell();
       case 'pharmacien':
         return const _ComingSoonShell(
           role: 'pharmacien',

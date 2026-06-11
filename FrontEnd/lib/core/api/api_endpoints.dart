@@ -54,6 +54,13 @@ class ApiEndpoints {
   static String constantes(String id)   => '/passages/$id/constantes';
   static String consultation(String id) => '/passages/$id/consultation';
 
-  // Laboratoire
-  static const String ajouterExamen = '/laboratoire/ajouter-examen';
+  // ── Laborantin ───────────────────────────────────────
+  static const String laboPassagesEnAttente =
+      '/laboratoire/passages-en-attente';
+  static const String laboHistorique =
+      '/laboratoire/historique';
+  static const String laboStats =
+      '/laboratoire/stats';
+  static const String laboAjouterExamen =
+      '/laboratoire/ajouter-examen';
 }
