@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
-import '../../domain/models/role_pro.dart';
-import '../../../agent_accueil/presentation/screens/agent_accueil_shell.dart';
-import '../../../infirmier/presentation/screens/infirmier_shell.dart';
-import '../../../pharmacien/presentation/screens/pharmacien_shell.dart';
+import 'login_pro_screen.dart';
+
+enum RolePro {
+  medecin,
+  infirmier,
+  accueil,
+  laborantin,
+  pharmacien,
+}
 
 class ChoixPosteScreen extends StatelessWidget {
   const ChoixPosteScreen({super.key});
@@ -32,15 +37,54 @@ class ChoixPosteScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            ...RolePro.values.map(
-              (role) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _PosteCard(role: role),
-              ),
+            _PosteCard(
+              icon: Icons.medical_services_outlined,
+              iconColor: AppColors.roleMedecin,
+              iconBg: const Color(0xFFDCFCE7),
+              title: 'Médecin',
+              subtitle: 'Diagnostic & ordonnance',
+              role: RolePro.medecin,
+            ),
+            const SizedBox(height: 12),
+            _PosteCard(
+              icon: Icons.monitor_heart_outlined,
+              iconColor: AppColors.primary,
+              iconBg: AppColors.primaryLight,
+              title: 'Infirmier(ère)',
+              subtitle: 'Constantes vitales',
+              role: RolePro.infirmier,
+            ),
+            const SizedBox(height: 12),
+            _PosteCard(
+              icon: Icons.crop_free,
+              iconColor: const Color(0xFF7C3AED),
+              iconBg: const Color(0xFFEDE9FE),
+              title: "Agent d'accueil",
+              subtitle: 'Admission & scan QR',
+              role: RolePro.accueil,
+            ),
+            const SizedBox(height: 12),
+            _PosteCard(
+              icon: Icons.science_outlined,
+              iconColor: AppColors.roleLaborantin,
+              iconBg: const Color(0xFFFEF3C7),
+              title: 'Laborantin',
+              subtitle: 'Publication des examens',
+              role: RolePro.laborantin,
+            ),
+            const SizedBox(height: 12),
+            _PosteCard(
+              icon: Icons.medication_outlined,
+              iconColor: AppColors.rolePharmacien,
+              iconBg: const Color(0xFFFEE2E2),
+              title: 'Pharmacien',
+              subtitle: 'Délivrance médicaments',
+              role: RolePro.pharmacien,
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
+            // Note information
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -59,8 +103,7 @@ class ChoixPosteScreen extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      "Les comptes professionnels sont créés par l'administrateur système. "
-                      "Si votre poste n'apparaît pas, contactez votre service informatique.",
+                      "Les comptes professionnels sont créés par l'administrateur système. Si votre poste n'apparaît pas, contactez votre service informatique.",
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textMedium,
                         height: 1.5,
@@ -78,37 +121,35 @@ class ChoixPosteScreen extends StatelessWidget {
 }
 
 class _PosteCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String title;
+  final String subtitle;
   final RolePro role;
-  const _PosteCard({required this.role});
 
-  void _onTap(BuildContext context) {
-    Widget? destination;
-    switch (role) {
-      case RolePro.infirmier:
-        destination = const InfirmierShell();
-        break;
-      case RolePro.accueil:
-        destination = const AgentAccueilShell();
-        break;
-      case RolePro.pharmacien:
-        destination = const PharmacienShell();
-        break;
-      default:
-        break;
-    }
-    if (destination != null) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => destination!),
-        (route) => false,
-      );
-    }
-  }
+  const _PosteCard({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+    required this.title,
+    required this.subtitle,
+    required this.role,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _onTap(context),
+      onTap: () {
+        // Navigation vers le parcours du rôle choisi.
+        // TODO: insérer le login biométrique en amont quand il sera prêt.
+        if (role == RolePro.accueil) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginProScreen()),
+          );
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
@@ -122,19 +163,19 @@ class _PosteCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: role.bgColor,
+                color: iconBg,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(role.icon, color: role.color, size: 24),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(role.label, style: AppTextStyles.h4),
+                  Text(title, style: AppTextStyles.h4),
                   const SizedBox(height: 2),
-                  Text(role.subtitle, style: AppTextStyles.bodyMedium),
+                  Text(subtitle, style: AppTextStyles.bodyMedium),
                 ],
               ),
             ),

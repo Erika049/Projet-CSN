@@ -18,6 +18,10 @@ repositories {
     mavenCentral()
 }
 
+bootJar {
+    archiveFileName = 'numsante-0.0.1-SNAPSHOT.jar'
+}
+
 dependencies {
     // Actuator, JPA, Security, Web, Validation
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

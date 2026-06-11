@@ -9,9 +9,7 @@ import 'patient_notifications_screen.dart';
 import 'patient_detail_passage_screen.dart';
 
 class PatientHomeScreen extends StatefulWidget {
-  /// Callback pour changer d'onglet dans le PatientShell.
   final void Function(int index)? onSwitchTab;
-
   const PatientHomeScreen({super.key, this.onSwitchTab});
 
   @override
@@ -27,6 +25,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   PassageMedical? _passageEnCours;
   int _notifCount = 0;
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -36,11 +35,23 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
   Future<void> _loadPatientId() async {
     _patientId = await _authService.getUserId();
-    if (_patientId != null) { _loadData(); }
+    if (_patientId != null) {
+      _loadData();
+    } else {
+      if (!mounted) { return; }
+      setState(() {
+        _loading = false;
+        _error = 'Session introuvable. Veuillez vous reconnecter.';
+      });
+    }
   }
 
   Future<void> _loadData() async {
     if (_patientId == null) { return; }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final results = await Future.wait([
         _service.getProfil(_patientId!),
@@ -53,16 +64,19 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
         _passageEnCours = results[1] as PassageMedical?;
         _notifCount = results[2] as int;
         _loading = false;
+        _error = null;
       });
     } catch (e) {
       if (!mounted) { return; }
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      // Message lisible selon le type d'erreur
+      final message = e.toString().contains('timeout') ||
+          e.toString().contains('longer than')
+          ? 'Le serveur met du temps à répondre.\nCliquez sur Réessayer dans quelques secondes.'
+          : 'Impossible de charger les données.\nVérifiez votre connexion.';
+      setState(() {
+        _loading = false;
+        _error = message;
+      });
     }
   }
 
@@ -75,6 +89,52 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           child: CircularProgressIndicator(
             color: AppColors.primary,
             strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+
+    if (_error != null || _patient == null) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.cloud_off_rounded,
+                  size: 64,
+                  color: AppColors.textLight,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Impossible de charger\nles données',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _error ?? 'Données indisponibles',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMedium,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _loadData,
+                  child: const Text('Réessayer'),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -123,7 +183,6 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     );
   }
 
-  // ==================== HEADER ====================
   Widget _buildHeader(Patient patient) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -214,7 +273,6 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     );
   }
 
-  // ==================== CARTE NUMÉRIQUE ====================
   Widget _buildCarteNumerique(Patient patient) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -305,7 +363,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               const SizedBox(width: 24),
               _CarteInfo(
                 label: 'STATUT',
-                value: patient.carte.estActive ? '● Actif' : '● Inactif',
+                value: patient.carte.estActive
+                    ? '● Actif'
+                    : '● Inactif',
                 valueColor: patient.carte.estActive
                     ? const Color(0xFF7BD491)
                     : AppColors.error,
@@ -317,10 +377,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     );
   }
 
-  // ==================== PASSAGE EN COURS ====================
   Widget _buildPassageEnCours(PassageMedical passage) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.backgroundWhite,
         borderRadius: BorderRadius.circular(14),
@@ -365,7 +425,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${passage.service}',
+                  passage.service,
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textMedium,
@@ -376,9 +436,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 4,
-            ),
+                horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.success.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
@@ -397,7 +455,6 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     );
   }
 
-  // ==================== GRILLE 2x2 ====================
   Widget _buildGrille() {
     return GridView.count(
       crossAxisCount: 2,
@@ -453,7 +510,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
       context: context,
       backgroundColor: AppColors.backgroundWhite,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius:
+        BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => SafeArea(
         child: Padding(
@@ -471,29 +529,39 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               ),
               const SizedBox(height: 16),
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
+                padding:
+                EdgeInsets.symmetric(horizontal: 24),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Établissements partenaires',
-                      style: AppTextStyles.h4),
+                  child: Text(
+                    'Établissements partenaires',
+                    style: AppTextStyles.h4,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
               ...hopitaux.map(
-                (h) => ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                    (h) => ListTile(
+                  contentPadding:
+                  const EdgeInsets.symmetric(
+                      horizontal: 24),
                   leading: Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
                       color: const Color(0xFFEDE9FE),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius:
+                      BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.local_hospital_outlined,
-                        color: Color(0xFF7C3AED)),
+                    child: const Icon(
+                      Icons.local_hospital_outlined,
+                      color: Color(0xFF7C3AED),
+                    ),
                   ),
-                  title: Text(h.$1, style: AppTextStyles.labelLarge),
-                  subtitle: Text(h.$2, style: AppTextStyles.bodySmall),
+                  title: Text(h.$1,
+                      style: AppTextStyles.labelLarge),
+                  subtitle: Text(h.$2,
+                      style: AppTextStyles.bodySmall),
                 ),
               ),
               const SizedBox(height: 8),
@@ -504,7 +572,6 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     );
   }
 
-  // ==================== PASSAGE DÉTAIL ====================
   Widget _buildDernierPassage(PassageMedical passage) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -512,7 +579,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Passage en cours', style: AppTextStyles.h4),
+            const Text('Passage en cours',
+                style: AppTextStyles.h4),
             TextButton(
               onPressed: () => widget.onSwitchTab?.call(2),
               style: TextButton.styleFrom(
@@ -550,7 +618,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment:
+                  MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
@@ -564,12 +633,11 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius:
+                        BorderRadius.circular(20),
                       ),
                       child: const Text(
                         'En cours',
@@ -596,10 +664,12 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                           label: 'TENSION',
                           value: passage.constantes!.tension!,
                         ),
-                      if (passage.constantes!.temperature != null)
+                      if (passage.constantes!.temperature !=
+                          null)
                         _ConstanteItem(
                           label: 'TEMP.',
-                          value: passage.constantes!.temperature!,
+                          value: passage
+                              .constantes!.temperature!,
                         ),
                       if (passage.constantes!.poids != null)
                         _ConstanteItem(
@@ -622,8 +692,6 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     );
   }
 }
-
-// ==================== WIDGETS LOCAUX ====================
 
 class _CarteInfo extends StatelessWidget {
   final String label;
@@ -687,47 +755,47 @@ class _GridCard extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundWhite,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textDark,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
-              ),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textMedium,
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMedium,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

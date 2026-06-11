@@ -90,6 +90,7 @@ const mockAdmissions = <Admission>[
 // ---------------------------------------------------------------------------
 
 class IdentifiedPatient {
+  final String id; // UUID réel du patient (requis pour créer un passage)
   final String nom;
   final String idShort;
   final String dateNaissance;
@@ -100,6 +101,7 @@ class IdentifiedPatient {
   final String initials;
 
   const IdentifiedPatient({
+    required this.id,
     required this.nom,
     required this.idShort,
     required this.dateNaissance,
@@ -112,6 +114,7 @@ class IdentifiedPatient {
 }
 
 const mockIdentifiedPatient = IdentifiedPatient(
+  id: '8f3b9c2a-1234-4bc3-a716-446655440000',
   nom: 'TCHAMENI Jean',
   idShort: '8f3b9c2a···440000',
   dateNaissance: '14/05/88',
