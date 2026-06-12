@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../core/utils/utils.dart';
+import '../../../admin/presentation/screens/admin_shell.dart';
 import '../../data/auth_api_service.dart';
 import '../../data/auth_local_service.dart';
 import '../../../patient/presentation/screens/patient_shell.dart';
@@ -35,11 +36,7 @@ class LoginScreen extends StatefulWidget {
           icon: Icons.local_pharmacy_outlined,
         );
       case 'admin':
-        return const _ComingSoonShell(
-          role: 'admin',
-          label: 'Administrateur',
-          icon: Icons.admin_panel_settings_outlined,
-        );
+        return const AdminShell();
       default:
         return _ComingSoonShell(
           role: role,
