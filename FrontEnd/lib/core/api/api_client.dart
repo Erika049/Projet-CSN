@@ -53,6 +53,7 @@ class ApiClient {
         onError: (error, handler) async {
           final status =
               error.response?.statusCode;
+          print('DEBUG: Error status code: $status');
 
           if (status == 401) {
             // Session expirée → logout + AppEntry

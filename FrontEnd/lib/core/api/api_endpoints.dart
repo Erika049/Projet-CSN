@@ -7,7 +7,7 @@ class ApiEndpoints {
   // Émulateur Android → utilise 10.0.2.2
   // ════════════════════════════════════════════
   static const String baseUrl = 'https://projet-csn.onrender.com/api/v1';
-
+  //static const String baseUrl = 'http://10.0.2.2:8080/api/v1';
   // Vérification réseau
   static const String networkCheck = '/network/check';
 

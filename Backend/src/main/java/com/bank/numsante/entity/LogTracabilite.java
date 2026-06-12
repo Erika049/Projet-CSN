@@ -38,6 +38,9 @@ public class LogTracabilite {
     @Column(name = "adresse_ip")
     private String adresseIp;
 
+    @Column(name = "description")
+    private String description;
+
     @CreationTimestamp
     @Column(name = "horodatage")
     private LocalDateTime horodatage;

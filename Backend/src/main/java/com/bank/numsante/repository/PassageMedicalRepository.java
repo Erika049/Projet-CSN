@@ -17,4 +17,7 @@ public interface PassageMedicalRepository
 
     List<PassageMedical> findByCreateur_IdPersonnelAndDateAdmissionAfterOrderByDateAdmissionDesc(
             Long idPersonnel, LocalDateTime debut);
+
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM PassageMedical p WHERE p.hopital.idHopital = :idHopital AND p.dateAdmission >= CURRENT_DATE ORDER BY p.dateAdmission DESC")
+    List<PassageMedical> findPassagesDuJour(Long idHopital);
 }
