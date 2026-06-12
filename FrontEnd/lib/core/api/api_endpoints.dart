@@ -50,6 +50,14 @@ class ApiEndpoints {
   static const String scanCarte    = '/admission/scan-carte';
   static const String creerPassage = '/admission/creer-passage';
 
+  // ── Admin ────────────────────────────────────────────
+  static const String adminStats     = '/admin/stats';
+  static const String adminPersonnel = '/admin/personnel';
+  static const String adminHopitaux  = '/admin/hopitaux';
+  static const String adminLogs      = '/admin/logs';
+  static String adminToggleActif(String id) =>
+      '/admin/personnel/$id/toggle-actif';
+
   // Passages
   static String constantes(String id)   => '/passages/$id/constantes';
   static String consultation(String id) => '/passages/$id/consultation';
