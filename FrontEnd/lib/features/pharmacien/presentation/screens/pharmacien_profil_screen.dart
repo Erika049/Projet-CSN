@@ -5,15 +5,50 @@ import '../../../../features/auth/data/auth_local_service.dart';
 import '../../../../features/auth/presentation/screens/splash_screen.dart';
 import '../../../patient/presentation/widgets/patient_widgets.dart';
 import '../../data/pharmacien_mock_data.dart';
+import '../../data/pharmacien_repository.dart';
 import '../widgets/pharmacien_widgets.dart';
 
 /// Écran "Profil" du pharmacien — Tab 4.
-class PharmacienProfilScreen extends StatelessWidget {
+class PharmacienProfilScreen extends StatefulWidget {
   const PharmacienProfilScreen({super.key});
 
   @override
+  State<PharmacienProfilScreen> createState() => _PharmacienProfilScreenState();
+}
+
+class _PharmacienProfilScreenState extends State<PharmacienProfilScreen> {
+  final PharmacienRepository _repository = PharmacienRepository();
+  PharmacienProfile? _profile;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      // TODO: Remplacer '1' par l'ID réel du personnel connecté
+      final data = await _repository.getPersonnelProfil('1');
+      if (!mounted) return;
+      setState(() {
+        _profile = PharmacienProfile.fromJson(data);
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    const pharm = mockPharmacien;
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    
+    final pharm = _profile ?? mockPharmacien;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -30,8 +65,8 @@ class PharmacienProfilScreen extends StatelessWidget {
             AppCard(
               child: Row(
                 children: [
-                  const InitialsAvatar(
-                    initials: 'FA',
+                  InitialsAvatar(
+                    initials: pharm.initials,
                     size: 52,
                     background: pharmAvatarBg,
                     foreground: pharmAvatarFg,
@@ -59,6 +94,7 @@ class PharmacienProfilScreen extends StatelessWidget {
                 ],
               ),
             ),
+            // ... (reste de la UI identique)
             const SizedBox(height: 16),
 
             AppCard(

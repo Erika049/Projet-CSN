@@ -46,13 +46,27 @@ class ApiEndpoints {
   static String toutLire(String id)         => '/notifications/patient/$id/tout-lire';
   static String marquerLue(String id)       => '/notifications/$id/lire';
 
-  // Admission (utilisé par le parcours agent d'accueil)
+  // Personnel (Générique)
+  static String personnelProfil(String id) => '/personnel/$id/profil';
+
+  // Admission (Agent d'accueil)
   static const String scanCarte    = '/admission/scan-carte';
   static const String creerPassage = '/admission/creer-passage';
+  static String dashboardAccueil(String id) => '/admission/dashboard/$id';
+  static String activiteAgent(String id)    => '/admission/activite/$id';
 
-  // Passages
+  // Infirmier
+  static String dashboardInfirmier(String id) => '/infirmier/dashboard/$id';
+  static String activiteInfirmier(String id)  => '/infirmier/activite/$id';
+
+  // ──────────────────────────────────────────────────────────
+  // PASSAGES & SOINS
+  // ──────────────────────────────────────────────────────────
   static String constantes(String id)   => '/passages/$id/constantes';
   static String consultation(String id) => '/passages/$id/consultation';
+
+  static String soin(String idPassage) => '/passages/$idPassage/soins';
+  static String injection(String idPassage) => '/passages/$idPassage/injections';
 
   // Laboratoire
   static const String ajouterExamen = '/laboratoire/ajouter-examen';

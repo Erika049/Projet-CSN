@@ -39,7 +39,7 @@ class AppColors {
   static const Color rolePatient = Color(0xFF2563EB);
   static const Color roleAccueil = Color(0xFF2563EB);
   static const Color roleMedecin = Color(0xFF16A34A);
-  static const Color roleInfirmier = Color(0xFF92400E);
+  static const Color roleInfirmier = Color(0xFF2563EB);
   static const Color roleLaborantin = Color(0xFFC2410C);
   static const Color rolePharmacien = Color(0xFFB91C1C);
 }

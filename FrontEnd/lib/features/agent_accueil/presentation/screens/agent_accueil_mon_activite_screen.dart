@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../patient/presentation/widgets/patient_widgets.dart';
+import '../widgets/agent_accueil_widgets.dart';
 import '../../../../features/auth/data/auth_local_service.dart';
 import '../../data/agent_accueil_api_service.dart';
 

@@ -16,6 +16,14 @@ class PharmacienProfile {
     required this.service,
   });
 
+  factory PharmacienProfile.fromJson(Map<String, dynamic> json) {
+    return PharmacienProfile(
+      prenom: json['prenom'] ?? '',
+      nom: json['nom'] ?? '',
+      service: json['role'] ?? 'Pharmacien',
+    );
+  }
+
   String get fullName => '$prenom $nom';
   String get displayName => '$prenom $nom';
   String get initials =>
@@ -86,6 +94,29 @@ class OrdonnanceItem {
     required this.diagnosticComplet,
     required this.medicaments,
   });
+
+  factory OrdonnanceItem.fromJson(Map<String, dynamic> json) {
+    return OrdonnanceItem(
+      initials: (json['patientName'] ?? 'XX').split(' ').map((e) => e[0]).join(),
+      patient: json['patientName'] ?? 'Inconnu',
+      diagnostic: json['titre'] ?? 'Aucun',
+      nbMedicaments: (json['medicaments'] as List).length,
+      tempsEcoule: 'Maintenant',
+      ordonnanceId: json['idOrdonnance'] ?? '',
+      medecinInitials: 'Dr',
+      medecinNom: json['medecinNom'] ?? 'Inconnu',
+      medecinService: json['specialite'] ?? '',
+      dateOrdonnance: json['dateDelivrance'] ?? '',
+      diagnosticComplet: json['titre'] ?? '',
+      medicaments: (json['medicaments'] as List)
+          .map((m) => MedicamentItem(
+                nom: m['nom'],
+                quantite: '${m['comprimesTotaux']} cp',
+                posologie: m['posologie'],
+              ))
+          .toList(),
+    );
+  }
 }
 
 const mockOrdonnances = <OrdonnanceItem>[

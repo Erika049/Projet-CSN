@@ -8,6 +8,8 @@ import 'infirmier_mon_activite_screen.dart';
 import 'infirmier_passages_screen.dart';
 import 'infirmier_profil_screen.dart';
 import 'infirmier_saisie_constantes_screen.dart';
+import 'infirmier_saisie_soin_screen.dart';
+import 'infirmier_saisie_injection_screen.dart';
 
 class InfirmierShell extends StatefulWidget {
   const InfirmierShell({super.key});
@@ -22,6 +24,7 @@ class _InfirmierShellState extends State<InfirmierShell> {
 
   int                  _index          = 0;
   PassageInfirmierApi? _selectedPassage;
+  String?              _activeActeType; // 'soin' ou 'injection'
   String               _infName        = '';
   String               _infInitials    = '?';
 
@@ -59,13 +62,30 @@ class _InfirmierShellState extends State<InfirmierShell> {
   void _selectPassage(PassageInfirmierApi passage) {
     setState(() {
       _selectedPassage = passage;
+      _activeActeType  = null;
       _index           = 1;
+    });
+  }
+
+  void _selectActe(PassageInfirmierApi passage, String type) {
+    setState(() {
+      _selectedPassage = passage;
+      _activeActeType  = type;
+      _index           = 1; // On réutilise l'index 1 pour les actes
     });
   }
 
   // Appelé après validation des constantes
   void _onConstantesSaved() {
     _selectedPassage = null;
+    _activeActeType  = null;
+    _passagesRefresh.value++;
+    _goToTab(0);
+  }
+
+  void _onActeSaved() {
+    _selectedPassage = null;
+    _activeActeType  = null;
     _passagesRefresh.value++;
     _goToTab(0);
   }
@@ -78,18 +98,36 @@ class _InfirmierShellState extends State<InfirmierShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      InfirmierPassagesScreen(
-        onSelectPassage: _selectPassage,
-        refreshNotifier: _passagesRefresh,
-      ),
-      InfirmierSaisieConstantesScreen(
+    Widget acteScreen;
+    if (_activeActeType == 'soin') {
+      acteScreen = InfirmierSaisieSoinScreen(
+        idPassage: _selectedPassage!.idPassage,
+        passage:   _selectedPassage,
+        onSaved:   _onActeSaved,
+      );
+    } else if (_activeActeType == 'injection') {
+      acteScreen = InfirmierSaisieInjectionScreen(
+        idPassage: _selectedPassage!.idPassage,
+        passage:   _selectedPassage,
+        onSaved:   _onActeSaved,
+      );
+    } else {
+      acteScreen = InfirmierSaisieConstantesScreen(
         passage:         _selectedPassage,
         infName:         _infName,
         infInitials:     _infInitials,
         onSaved:         _onConstantesSaved,
         onCancel:        () => _goToTab(0),
+      );
+    }
+
+    final pages = [
+      InfirmierPassagesScreen(
+        onSelectPassage: _selectPassage,
+        onSelectActe:    _selectActe,
+        refreshNotifier: _passagesRefresh,
       ),
+      acteScreen,
       const InfirmierMonActiviteScreen(),
       const InfirmierProfilScreen(),
     ];

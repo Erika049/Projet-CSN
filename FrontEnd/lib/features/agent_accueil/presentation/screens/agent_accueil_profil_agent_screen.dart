@@ -95,61 +95,13 @@ class _ProfilAgentScreenState extends State<ProfilAgentScreen> {
     );
   }
 
-  void _confirmerDeconnexion() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.backgroundWhite,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 36, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 24),
-            Container(
-              width: 56, height: 56,
-              decoration: BoxDecoration(color: AppColors.errorLight, borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.logout_rounded, color: AppColors.error, size: 28),
-            ),
-            const SizedBox(height: 16),
-            const Text('Se déconnecter ?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textDark)),
-            const SizedBox(height: 8),
-            const Text(
-              'Votre session sera fermée. Vos données locales seront effacées.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppColors.textMedium, height: 1.5),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity, height: 50,
-              child: ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  await _local.logout();
-                  if (!context.mounted) return;
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SplashScreen()),
-                    (route) => false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                child: const Text('Se déconnecter', style: TextStyle(fontWeight: FontWeight.w600)),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity, height: 50,
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.border), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                child: const Text('Annuler', style: TextStyle(color: AppColors.textMedium)),
-              ),
-            ),
-          ],
-        ),
-      ),
+  Future<void> _logout() async {
+    await _local.logout();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const SplashScreen()),
+      (route) => false,
     );
   }
 
@@ -212,41 +164,38 @@ class _ProfilAgentScreenState extends State<ProfilAgentScreen> {
 
               // ── Carte identité ───────────────────────────────────────────
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark]),
-                  borderRadius: BorderRadius.circular(20),
+                  color: AppColors.backgroundWhite,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 56, height: 56,
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                      width: 52, height: 52,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
                       child: Center(
-                        child: Text(initiales, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+                        child: Text(initiales, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary)),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('$prenom $nom'.trim(), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
+                          Text('$prenom $nom'.trim(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textDark)),
                           const SizedBox(height: 2),
-                          Text(poste, style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85))),
-                          Text(lieu,  style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.65))),
+                          Text(poste, style: const TextStyle(fontSize: 13, color: AppColors.textMedium)),
+                          Text(lieu,  style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
                           if (identifiant.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                identifiant,
-                                style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.9), fontFamily: 'monospace'),
-                              ),
+                            const SizedBox(height: 4),
+                            Text(
+                              identifiant,
+                              style: const TextStyle(fontSize: 11, color: AppColors.textLight, fontFamily: 'monospace'),
                             ),
                           ],
                         ],
@@ -301,15 +250,13 @@ class _ProfilAgentScreenState extends State<ProfilAgentScreen> {
               // ── Déconnexion ──────────────────────────────────────────────
               SizedBox(
                 width: double.infinity, height: 52,
-                child: OutlinedButton.icon(
-                  onPressed: _confirmerDeconnexion,
-                  icon: const Icon(Icons.logout_rounded, size: 18),
-                  label: const Text('Se déconnecter'),
+                child: OutlinedButton(
+                  onPressed: _logout,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
                     side: const BorderSide(color: AppColors.error),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
+                  child: const Text('Se déconnecter'),
                 ),
               ),
 

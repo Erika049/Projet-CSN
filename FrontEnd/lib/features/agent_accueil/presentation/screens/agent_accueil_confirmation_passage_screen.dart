@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
-import '../../../patient/presentation/widgets/patient_widgets.dart';
 import '../../data/agent_accueil_api_service.dart';
 import '../widgets/agent_accueil_widgets.dart';
 

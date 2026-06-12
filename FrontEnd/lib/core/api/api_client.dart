@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_endpoints.dart';
 
@@ -40,6 +41,10 @@ class ApiClient {
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
+            // Debug: Log uniquement dans la console navigateur
+            debugPrint('ApiClient: Adding Authorization header for ${options.path}');
+          } else {
+             debugPrint('ApiClient: No token found for ${options.path}');
           }
           handler.next(options);
         },

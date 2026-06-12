@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import '../../../core/api/api.dart';
 import 'auth_local_service.dart';
 
@@ -40,12 +41,15 @@ class AuthApiService {
     required String motDePasse,
   }) async {
     try {
+      final payload = {
+        'identifiant': identifiant,
+        'motDePasse': motDePasse,
+      };
+      debugPrint('AuthApiService: Sending loginPatient payload: $payload');
+      
       final response = await _dio.post(
         ApiEndpoints.loginPatient,
-        data: {
-          'identifiant': identifiant,
-          'motDePasse': motDePasse,
-        },
+        data: payload,
       );
       final data = response.data as Map<String, dynamic>;
       await _local.saveSession(
@@ -56,6 +60,7 @@ class AuthApiService {
       await _local.saveUserId(data['id'].toString());
       return data;
     } on DioException catch (e) {
+      debugPrint('AuthApiService: loginPatient error: ${e.response?.data}');
       throw ApiException.fromDioError(e);
     }
   }

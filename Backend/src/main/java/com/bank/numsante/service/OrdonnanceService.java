@@ -41,10 +41,56 @@ public class OrdonnanceService {
                 .collect(Collectors.toList());
     }
 
+    public List<OrdonnanceDto> getAllOrdonnancesActives() {
+        return ordonnanceRepo
+                .findByStatutOrderByDateDelivranceDesc("active")
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<OrdonnanceDto> getHistoriquePharmacien() {
+        return ordonnanceRepo
+                .findByStatutNotOrderByDateDelivranceDesc("active")
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     public OrdonnanceDto getOrdonnance(UUID idOrdonnance) {
         Ordonnance ord = ordonnanceRepo.findById(idOrdonnance)
                 .orElseThrow(() -> new RuntimeException("Ordonnance non trouvée"));
         return toDto(ord);
+    }
+
+    @Transactional
+    public void delivrerOrdonnance(UUID idOrdonnance) {
+        Ordonnance ord = ordonnanceRepo.findById(idOrdonnance)
+                .orElseThrow(() -> new RuntimeException("Ordonnance non trouvée"));
+        ord.setStatut("terminee");
+        ordonnanceRepo.save(ord);
+        
+        _creerNotification(
+                ord.getPatient(),
+                "Ordonnance délivrée",
+                "Votre ordonnance " + ord.getTitre() + " a été délivrée.",
+                "ordonnance"
+        );
+    }
+
+    @Transactional
+    public void refuserOrdonnance(UUID idOrdonnance) {
+        Ordonnance ord = ordonnanceRepo.findById(idOrdonnance)
+                .orElseThrow(() -> new RuntimeException("Ordonnance non trouvée"));
+        ord.setStatut("refusee");
+        ordonnanceRepo.save(ord);
+        
+        _creerNotification(
+                ord.getPatient(),
+                "Ordonnance refusée",
+                "Votre ordonnance " + ord.getTitre() + " a été refusée.",
+                "ordonnance"
+        );
     }
 
     @Transactional

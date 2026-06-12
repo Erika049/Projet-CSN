@@ -9,4 +9,6 @@ public interface OrdonnanceRepository extends JpaRepository<Ordonnance, UUID> {
     List<Ordonnance> findByPatient_IdPatientOrderByDateDelivranceDesc(UUID idPatient);
     List<Ordonnance> findByPatient_IdPatientAndStatutOrderByDateDelivranceDesc(
             UUID idPatient, String statut);
+    List<Ordonnance> findByStatutOrderByDateDelivranceDesc(String statut);
+    List<Ordonnance> findByStatutNotOrderByDateDelivranceDesc(String statut);
 }

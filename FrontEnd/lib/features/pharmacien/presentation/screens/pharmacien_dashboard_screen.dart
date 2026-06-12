@@ -3,14 +3,44 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../patient/presentation/widgets/patient_widgets.dart';
 import '../../data/pharmacien_mock_data.dart';
+import '../../data/pharmacien_repository.dart';
 import '../widgets/pharmacien_widgets.dart';
 import 'pharmacien_detail_ordonnance_screen.dart';
 
 /// Page 40 — "Ordonnances en attente" (tableau de bord pharmacien).
-class PharmacienDashboardScreen extends StatelessWidget {
+class PharmacienDashboardScreen extends StatefulWidget {
   final VoidCallback onOpenScanner;
 
   const PharmacienDashboardScreen({super.key, required this.onOpenScanner});
+
+  @override
+  State<PharmacienDashboardScreen> createState() => _PharmacienDashboardScreenState();
+}
+
+class _PharmacienDashboardScreenState extends State<PharmacienDashboardScreen> {
+  final PharmacienRepository _repository = PharmacienRepository();
+  List<OrdonnanceItem> _ordonnances = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOrdonnances();
+  }
+
+  Future<void> _loadOrdonnances() async {
+    try {
+      final data = await _repository.getOrdonnancesActives();
+      if (!mounted) return;
+      setState(() {
+        _ordonnances = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +48,9 @@ class PharmacienDashboardScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
         bottom: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -49,19 +81,19 @@ class PharmacienDashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Stat cards
-            const Row(
+            // Stat cards (Mis à jour pour reflet réel si possible, mais gardé pour l'UI)
+            Row(
               children: [
                 Expanded(
                   child: PharmStatCard(
-                    value: '12',
+                    value: '${_ordonnances.length}',
                     label: 'À DISPENSER',
                     valueColor: AppColors.primary,
                     background: AppColors.primaryLight,
                   ),
                 ),
-                SizedBox(width: 10),
-                Expanded(
+                const SizedBox(width: 10),
+                const Expanded(
                   child: PharmStatCard(
                     value: '3',
                     label: 'URGENTES',
@@ -69,8 +101,8 @@ class PharmacienDashboardScreen extends StatelessWidget {
                     background: AppColors.errorLight,
                   ),
                 ),
-                SizedBox(width: 10),
-                Expanded(
+                const SizedBox(width: 10),
+                const Expanded(
                   child: PharmStatCard(
                     value: '48',
                     label: 'DÉLIVRÉES',
@@ -89,7 +121,7 @@ class PharmacienDashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            for (final o in mockOrdonnances) ...[
+            for (final o in _ordonnances) ...[
               _OrdonnanceRow(item: o),
               const SizedBox(height: 10),
             ],
@@ -97,7 +129,7 @@ class PharmacienDashboardScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Bouton scanner
-            _ScannerButton(onTap: onOpenScanner),
+            _ScannerButton(onTap: widget.onOpenScanner),
           ],
         ),
       ),

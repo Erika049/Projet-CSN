@@ -1,5 +1,8 @@
 import 'package:dio/dio.dart';
 import '../../../core/api/api.dart';
+import '../../auth/data/auth_local_service.dart';
+import 'agent_accueil_service.dart';
+import 'agent_accueil_mock_data.dart';
 
 // ---------------------------------------------------------------------------
 // Modèle profil agent (GET /personnel/{id}/profil)
@@ -247,8 +250,100 @@ class DashboardAccueilApi {
 // Service API
 // ---------------------------------------------------------------------------
 
-class AgentAccueilApiService {
+class AgentAccueilApiService implements AgentAccueilService {
   final _dio = ApiClient.instance.dio;
+
+  @override
+  Future<AgentProfile> getAgentProfile() async {
+    final id = await AuthLocalService().getUserId();
+    if (id == null) throw Exception('Non connecté');
+    final p = await getProfil(id);
+    return AgentProfile(
+      prenom: p.prenom,
+      nom: p.nom,
+      poste: p.posteLabel,
+      lieu: p.lieuLabel,
+    );
+  }
+
+  @override
+  Future<List<Admission>> getAdmissions() async {
+    final id = await AuthLocalService().getUserId();
+    if (id == null) return [];
+    final d = await getDashboard(id);
+    return d.admissions.map((a) => Admission(
+      initials: a.initials,
+      nom:      a.nomComplet,
+      service:  a.motifVisite,
+      heure:    a.heure,
+      statut:   a.isUrgence ? AdmissionStatut.urgence : AdmissionStatut.ok,
+    )).toList();
+  }
+
+  @override
+  Future<List<ActivityEntry>> getActivities() async {
+    final id = await AuthLocalService().getUserId();
+    if (id == null) return [];
+    final a = await getActivite(id);
+    return a.passages.map((p) => ActivityEntry(
+      heure:   p.heure,
+      kind:    _mapKind(p.type),
+      titre:   _mapTitre(p.type),
+      patient: p.nomComplet,
+      details: p.motifVisite,
+    )).toList();
+  }
+
+  ActivityKind _mapKind(String type) {
+    switch (type) {
+      case 'URGENCE':        return ActivityKind.urgence;
+      case 'NOUVEAU_PATIENT': return ActivityKind.creation;
+      default:               return ActivityKind.scan;
+    }
+  }
+
+  String _mapTitre(String type) {
+    switch (type) {
+      case 'URGENCE':        return 'Admission urgence';
+      case 'NOUVEAU_PATIENT': return 'Nouveau patient';
+      default:               return 'Scan QR validé';
+    }
+  }
+
+  @override
+  Future<IdentifiedPatient> identifyPatient(String qrToken) async {
+    final p = await scanCarte(qrToken);
+    return IdentifiedPatient(
+      id:             p.idPatient,
+      nom:            p.nomComplet,
+      idShort:        p.idPatient.substring(0, 8),
+      dateNaissance:  p.dateNaissance,
+      age:            '—', // Calcul optionnel
+      groupe:         p.groupeSanguin,
+      telephone:      p.telephone,
+      dernierPassage: p.dernierPassageDate ?? 'Aucun',
+      initials:       p.initials,
+    );
+  }
+
+  @override
+  Future<void> createPassage({
+    required String patientId,
+    required String motif,
+    required String service,
+    required String medecin,
+  }) async {
+    final agentId = await AuthLocalService().getUserId();
+    if (agentId == null) throw Exception('Session expirée');
+    final profil = await getProfil(agentId);
+    if (profil.idHopital == null) throw Exception('Hôpital non défini');
+
+    await creerPassage(
+      idPatient: patientId,
+      idHopital: profil.idHopital!,
+      motifVisite: '$motif · $service · $medecin',
+    );
+  }
 
   /// Profil du personnel médical.
   Future<AgentProfilApi> getProfil(String idPersonnel) async {

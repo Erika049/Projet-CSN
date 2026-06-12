@@ -3,13 +3,52 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../patient/presentation/widgets/patient_widgets.dart';
 import '../../data/pharmacien_mock_data.dart';
+import '../../data/pharmacien_repository.dart';
 import 'pharmacien_delivrance_validee_screen.dart';
 
 /// Page 41 — Détail ordonnance pharmacien.
-class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
+class PharmacienDetailOrdonnanceScreen extends StatefulWidget {
   final OrdonnanceItem item;
 
   const PharmacienDetailOrdonnanceScreen({super.key, required this.item});
+
+  @override
+  State<PharmacienDetailOrdonnanceScreen> createState() => _PharmacienDetailOrdonnanceScreenState();
+}
+
+class _PharmacienDetailOrdonnanceScreenState extends State<PharmacienDetailOrdonnanceScreen> {
+  final PharmacienRepository _repository = PharmacienRepository();
+  bool _isLoading = false;
+
+  Future<void> _handleAction(bool isDelivery) async {
+    setState(() => _isLoading = true);
+    try {
+      if (isDelivery) {
+        await _repository.delivrerOrdonnance(widget.item.ordonnanceId);
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PharmacienDelivranceValideeScreen(item: widget.item),
+          ),
+        );
+      } else {
+        await _repository.refuserOrdonnance(widget.item.ordonnanceId);
+        if (!mounted) return;
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ordonnance refusée')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +63,7 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Ordonnance #${item.ordonnanceId}',
+          'Ordonnance #${widget.item.ordonnanceId}',
           style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -33,7 +72,9 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
         bottom: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
@@ -43,21 +84,21 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
-                  InitialsAvatar(initials: item.initials, size: 40),
+                  InitialsAvatar(initials: widget.item.initials, size: 40),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.patient,
+                          widget.item.patient,
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textDark,
                           ),
                         ),
-                        if (item.allergies.isNotEmpty) ...[
+                        if (widget.item.allergies.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           RichText(
                             text: TextSpan(
@@ -65,7 +106,7 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
                               children: [
                                 const TextSpan(text: 'Allergies : '),
                                 TextSpan(
-                                  text: item.allergies,
+                                  text: widget.item.allergies,
                                   style: const TextStyle(
                                     color: AppColors.error,
                                     fontWeight: FontWeight.w600,
@@ -126,7 +167,7 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
                   Row(
                     children: [
                       InitialsAvatar(
-                        initials: item.medecinInitials,
+                        initials: widget.item.medecinInitials,
                         size: 36,
                         background: AppColors.successLight,
                         foreground: AppColors.success,
@@ -137,7 +178,7 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              item.medecinNom,
+                              widget.item.medecinNom,
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -145,14 +186,14 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              item.medecinService,
+                              widget.item.medecinService,
                               style: AppTextStyles.bodySmall,
                             ),
                           ],
                         ),
                       ),
                       Text(
-                        item.dateOrdonnance,
+                        widget.item.dateOrdonnance,
                         style: AppTextStyles.bodySmall
                             .copyWith(color: AppColors.primary),
                       ),
@@ -173,7 +214,7 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
                             color: AppColors.textDark,
                           ),
                         ),
-                        TextSpan(text: item.diagnosticComplet),
+                        TextSpan(text: widget.item.diagnosticComplet),
                       ],
                     ),
                   ),
@@ -205,7 +246,7 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${item.nbMedicaments} médicament${item.nbMedicaments > 1 ? 's' : ''}',
+                              '${widget.item.nbMedicaments} médicament${widget.item.nbMedicaments > 1 ? 's' : ''}',
                               style: AppTextStyles.bodySmall,
                             ),
                           ],
@@ -214,13 +255,13 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  for (int i = 0; i < item.medicaments.length; i++) ...[
+                  for (int i = 0; i < widget.item.medicaments.length; i++) ...[
                     if (i > 0) ...[
                       const SizedBox(height: 10),
                       const Divider(height: 1),
                       const SizedBox(height: 10),
                     ],
-                    _MedicamentRow(med: item.medicaments[i]),
+                    _MedicamentRow(med: widget.item.medicaments[i]),
                   ],
                 ],
               ),
@@ -269,28 +310,20 @@ class PharmacienDetailOrdonnanceScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () => _handleAction(false),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                     foregroundColor: AppColors.textMedium,
                     side: const BorderSide(color: AppColors.border),
                   ),
-                  child: const Text('Signaler'),
+                  child: const Text('Refuser'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 flex: 2,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            PharmacienDelivranceValideeScreen(item: item),
-                      ),
-                    );
-                  },
+                  onPressed: () => _handleAction(true),
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                     backgroundColor: AppColors.success,

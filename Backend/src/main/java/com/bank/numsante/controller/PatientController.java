@@ -26,15 +26,11 @@ public class PatientController {
     private final PatientRepository patientRepository;
 
     @PostMapping("/enregistrer")
-    @Operation(summary = "Enregistrer un nouveau patient (inscription publique ou par agent)")
+    @Operation(summary = "Enregistrer un nouveau patient (inscription publique)")
     public ResponseEntity<Map<String, Object>> enregistrerPatient(
-            @Valid @RequestBody EnregistrementPatientRequest request,
-            Authentication authentication) {
-        // Si un agent authentifié appelle cet endpoint, son identifiant est transmis
-        String identifiantCreateur = (authentication != null && authentication.isAuthenticated())
-                ? authentication.getName() : null;
+            @Valid @RequestBody EnregistrementPatientRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(patientService.enregistrerPatient(request, identifiantCreateur));
+                .body(patientService.enregistrerPatient(request));
     }
 
     @GetMapping("/{idPatient}/profil")

@@ -3,11 +3,47 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../patient/presentation/widgets/patient_widgets.dart';
 import '../../data/pharmacien_mock_data.dart';
+import '../../data/pharmacien_repository.dart';
 import '../widgets/pharmacien_widgets.dart';
 
 /// Page 43 — "Mon activité" du pharmacien.
-class PharmacienMonActiviteScreen extends StatelessWidget {
+class PharmacienMonActiviteScreen extends StatefulWidget {
   const PharmacienMonActiviteScreen({super.key});
+
+  @override
+  State<PharmacienMonActiviteScreen> createState() => _PharmacienMonActiviteScreenState();
+}
+
+class _PharmacienMonActiviteScreenState extends State<PharmacienMonActiviteScreen> {
+  final PharmacienRepository _repository = PharmacienRepository();
+  List<PharmacienActivity> _activities = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadActivites();
+  }
+
+  Future<void> _loadActivites() async {
+    try {
+      final ords = await _repository.getHistorique();
+      if (!mounted) return;
+      setState(() {
+        _activities = ords.map((o) => PharmacienActivity(
+          heure: 'Historique', 
+          kind: o.dateOrdonnance.contains('refusee') ? PharmacienActivityKind.refus : PharmacienActivityKind.delivrance,
+          titre: o.dateOrdonnance.contains('refusee') ? 'Délivrance refusée' : 'Délivrance',
+          patient: o.patient,
+          details: o.diagnostic,
+        )).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,151 +51,122 @@ class PharmacienMonActiviteScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          children: [
-            // En-tête
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
+              bottom: false,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                children: [
+                  // En-tête
+                  Row(
                     children: [
-                      const Text('Mon activité',
-                          style: AppTextStyles.bodyMedium),
-                      Text(pharm.displayName, style: AppTextStyles.h1),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Pharmacien · ${pharm.service}',
-                        style: AppTextStyles.bodyMedium,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Mon activité',
+                                style: AppTextStyles.bodyMedium),
+                            Text(pharm.displayName, style: AppTextStyles.h1),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Pharmacien · ${pharm.service}',
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const InitialsAvatar(
+                        initials: 'FA',
+                        size: 44,
+                        background: pharmAvatarBg,
+                        foreground: pharmAvatarFg,
                       ),
                     ],
                   ),
-                ),
-                const InitialsAvatar(
-                  initials: 'FA',
-                  size: 44,
-                  background: pharmAvatarBg,
-                  foreground: pharmAvatarFg,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-            // Barre de recherche
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  icon: Icon(Icons.search, color: AppColors.textLight, size: 20),
-                  border: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  filled: false,
-                  hintText: 'Rechercher un patient par nom...',
-                  hintStyle: TextStyle(
-                    color: AppColors.textLight,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            const _TimeFilterBar(),
-            const SizedBox(height: 16),
-
-            // Stat cards (3 : Actions · Délivrance · Refus)
-            const Row(
-              children: [
-                Expanded(
-                  child: PharmStatCard(
-                    value: '4',
-                    label: 'MES ACTIONS',
-                    valueColor: AppColors.primary,
-                    background: AppColors.primaryLight,
-                  ),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: PharmStatCard(
-                    value: '3',
-                    label: 'DÉLIVRANCE',
-                    valueColor: AppColors.success,
-                    background: AppColors.successLight,
-                  ),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: PharmStatCard(
-                    value: '1',
-                    label: 'REFUS',
-                    valueColor: AppColors.error,
-                    background: AppColors.errorLight,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            const Text(
-              "AUJOURD'HUI · 24 MAI 2026",
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textLight,
-                letterSpacing: 0.6,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            for (final entry in mockPharmacienActivities) ...[
-              _ActivityRow(entry: entry),
-              const SizedBox(height: 10),
-            ],
-
-            const SizedBox(height: 16),
-
-            // Notice traçabilité
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: RichText(
-                text: TextSpan(
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textMedium, height: 1.5),
-                  children: const [
-                    TextSpan(
-                        text:
-                            'Toutes ces actions sont aussi enregistrées dans '),
-                    TextSpan(
-                      text: 'logs_tracabilite',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textDark,
+                  // Barre de recherche
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const TextField(
+                      decoration: InputDecoration(
+                        icon: Icon(Icons.search, color: AppColors.textLight, size: 20),
+                        border: InputBorder.none,
+                        hintText: 'Rechercher un patient par nom...',
                       ),
                     ),
-                    TextSpan(
-                        text: ' et auditables par l\'administrateur.'),
+                  ),
+                  const SizedBox(height: 14),
+
+                  const _TimeFilterBar(),
+                  const SizedBox(height: 16),
+
+                  // Stat cards
+                  const Row(
+                    children: [
+                      Expanded(
+                        child: PharmStatCard(
+                          value: '4', // À rendre dynamique si nécessaire
+                          label: 'MES ACTIONS',
+                          valueColor: AppColors.primary,
+                          background: AppColors.primaryLight,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: PharmStatCard(
+                          value: '3',
+                          label: 'DÉLIVRANCE',
+                          valueColor: AppColors.success,
+                          background: AppColors.successLight,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: PharmStatCard(
+                          value: '1',
+                          label: 'REFUS',
+                          valueColor: AppColors.error,
+                          background: AppColors.errorLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  for (final entry in _activities) ...[
+                    _ActivityRow(entry: entry),
+                    const SizedBox(height: 10),
                   ],
-                ),
+
+                  const SizedBox(height: 16),
+                  
+                  // Notice traçabilité
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: RichText(
+                      text: const TextSpan(
+                        style: AppTextStyles.bodySmall,
+                        children: [
+                          TextSpan(text: 'Toutes ces actions sont enregistrées dans logs_tracabilite.', style: TextStyle(color: AppColors.textMedium)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

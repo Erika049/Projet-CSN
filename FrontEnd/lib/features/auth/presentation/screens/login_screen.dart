@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../core/utils/utils.dart';
+import '../../../infirmier/presentation/screens/infirmier_shell.dart';
+import '../../../pharmacien/presentation/screens/pharmacien_shell.dart';
 import '../../data/auth_api_service.dart';
 import '../../data/auth_local_service.dart';
 import '../../../patient/presentation/screens/patient_shell.dart';
@@ -20,11 +22,7 @@ class LoginScreen extends StatefulWidget {
       case 'accueil':
         return const AgentAccueilShell();
       case 'infirmier':
-        return const _ComingSoonShell(
-          role: 'infirmier',
-          label: 'Infirmier(e)',
-          icon: Icons.medical_services_outlined,
-        );
+        return const InfirmierShell();
       case 'laborantin':
         return const _ComingSoonShell(
           role: 'laborantin',
@@ -32,11 +30,7 @@ class LoginScreen extends StatefulWidget {
           icon: Icons.science_outlined,
         );
       case 'pharmacien':
-        return const _ComingSoonShell(
-          role: 'pharmacien',
-          label: 'Pharmacien',
-          icon: Icons.local_pharmacy_outlined,
-        );
+        return const PharmacienShell();
       case 'admin':
         return const _ComingSoonShell(
           role: 'admin',

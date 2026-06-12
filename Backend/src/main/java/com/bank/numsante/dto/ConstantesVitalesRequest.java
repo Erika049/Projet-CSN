@@ -1,13 +1,10 @@
 package com.bank.numsante.dto;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import java.util.Map;
 
 @Data
 public class ConstantesVitalesRequest {
-    private String tension;
-    private String temperature;
-    private String poids;
-    private String freqCardiaque;
-    private String spo2;
-    private String freqRespi;
-    private String noteInfirmiere;
+    @NotNull
+    private Map<String, Object> constantesVitales;
 }

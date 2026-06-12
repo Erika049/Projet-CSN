@@ -3,7 +3,6 @@ package com.bank.numsante.service;
 import com.bank.numsante.dto.*;
 import com.bank.numsante.entity.*;
 import com.bank.numsante.repository.*;
-import com.bank.numsante.entity.PersonnelMedical;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
@@ -31,7 +30,6 @@ public class PatientService {
     private final LogService logService;
     private final CarteNumeriqueRepository carteNumeriqueRepository;
     private final PatientRepository patientRepository;
-    private final PersonnelMedicalRepository personnelRepository;
     private final PasswordEncoder passwordEncoder;
 
     // ======================== PROFIL ========================
@@ -91,8 +89,7 @@ public class PatientService {
     // ======================== INSCRIPTION ========================
 
     @Transactional
-    public Map<String, Object> enregistrerPatient(EnregistrementPatientRequest request,
-                                                   String identifiantCreateur) {
+    public Map<String, Object> enregistrerPatient(EnregistrementPatientRequest request) {
         // Vérifications unicité
         if (patientRepository.existsByIdentifiant(request.getIdentifiant())) {
             throw new RuntimeException("Cet identifiant est déjà utilisé");
@@ -128,14 +125,9 @@ public class PatientService {
         carte.setExpireLe(LocalDate.now().plusYears(2));
         carteNumeriqueRepository.save(carte);
 
-        // Résoudre l'ID de l'agent créateur si fourni
-        Long idCreateur = null;
-        if (identifiantCreateur != null) {
-            idCreateur = personnelRepository.findByIdentifiantPro(identifiantCreateur)
-                    .map(PersonnelMedical::getIdPersonnel)
-                    .orElse(null);
-        }
-        logService.logAction(idCreateur, patient.getIdPatient(), "CREATION_PATIENT", null);
+        // Log
+        logService.logAction(null, patient.getIdPatient(),
+                "CREATION_PATIENT_ET_QR", null);
 
         // Réponse
         Map<String, Object> response = new HashMap<>();

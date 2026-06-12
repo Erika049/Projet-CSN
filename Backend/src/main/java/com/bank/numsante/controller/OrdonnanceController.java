@@ -45,6 +45,20 @@ public class OrdonnanceController {
                 ordonnanceService.getOrdonnance(idOrdonnance));
     }
 
+    @PostMapping("/{idOrdonnance}/delivrer")
+    @Operation(summary = "Délivrer une ordonnance (pharmacien)")
+    public ResponseEntity<Void> delivrerOrdonnance(@PathVariable UUID idOrdonnance) {
+        ordonnanceService.delivrerOrdonnance(idOrdonnance);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{idOrdonnance}/refuser")
+    @Operation(summary = "Refuser une ordonnance (pharmacien)")
+    public ResponseEntity<Void> refuserOrdonnance(@PathVariable UUID idOrdonnance) {
+        ordonnanceService.refuserOrdonnance(idOrdonnance);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping
     @Operation(summary = "Créer une ordonnance (médecin)")
     public ResponseEntity<OrdonnanceDto> creerOrdonnance(

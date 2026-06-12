@@ -24,11 +24,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("error", message));
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", ex.getMessage()));
-    }
-
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntime(RuntimeException ex) {
         return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));

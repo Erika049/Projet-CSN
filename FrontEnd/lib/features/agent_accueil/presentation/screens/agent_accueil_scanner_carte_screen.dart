@@ -4,7 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../features/auth/data/auth_local_service.dart';
 import '../../data/agent_accueil_api_service.dart';
-import 'agent_acceuil_confirmation_passage_screen.dart';
+import 'agent_accueil_confirmation_passage_screen.dart';
 
 class ScannerCarteScreen extends StatefulWidget {
   final bool          embedded;

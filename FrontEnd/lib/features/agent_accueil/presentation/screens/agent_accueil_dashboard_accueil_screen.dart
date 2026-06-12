@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/theme/theme.dart';
-import '../../../patient/presentation/widgets/patient_widgets.dart';
 import '../../data/agent_accueil_api_service.dart';
 import '../../../../features/auth/data/auth_local_service.dart';
 import '../widgets/agent_accueil_widgets.dart';
