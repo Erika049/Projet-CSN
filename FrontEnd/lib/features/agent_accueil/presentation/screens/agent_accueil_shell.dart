@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'agent_acceuil_dashboard_accueil_screen.dart';
-import 'agent_acceuil_mon_activite_screen.dart';
-import 'agent_acceuil_profil_agent_screen.dart';
-import 'agent_acceuil_scanner_carte_screen.dart';
+import 'agent_accueil_dashboard_accueil_screen.dart';
+import 'agent_accueil_mon_activite_screen.dart';
+import 'agent_accueil_profil_agent_screen.dart';
+import 'agent_accueil_scanner_carte_screen.dart';
 
 /// Coquille principale de l'agent d'accueil : 4 onglets en bas
 /// (Tableau · Scanner · Mon activité · Profil).
