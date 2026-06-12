@@ -39,7 +39,6 @@ public class AdmissionController {
     public ResponseEntity<DashboardAccueilDto> getDashboard(@PathVariable Long idPersonnel) {
         return ResponseEntity.ok(admissionService.getDashboard(idPersonnel));
     }
-
     @GetMapping("/activite/{idPersonnel}")
     @Operation(summary = "Activité de l'agent d'accueil")
     public ResponseEntity<ActiviteAgentDto> getActivite(

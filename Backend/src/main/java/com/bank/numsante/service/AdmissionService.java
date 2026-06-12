@@ -156,7 +156,6 @@ public class AdminService {
                 nb
         );
     }
-
     private LogDto toLogDto(LogTracabilite l) {
         String nomPersonnel =
                 l.getPersonnel() != null
