@@ -1,7 +1,9 @@
+import 'package:carnet_sante_numerique/features/laborantin/presentation/laborantin_shell.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../../core/utils/utils.dart';
+import '../../../admin/presentation/screens/admin_shell.dart';
 import '../../../infirmier/presentation/screens/infirmier_shell.dart';
 import '../../../pharmacien/presentation/screens/pharmacien_shell.dart';
 import '../../data/auth_api_service.dart';
@@ -24,19 +26,11 @@ class LoginScreen extends StatefulWidget {
       case 'infirmier':
         return const InfirmierShell();
       case 'laborantin':
-        return const _ComingSoonShell(
-          role: 'laborantin',
-          label: 'Laborantin',
-          icon: Icons.science_outlined,
-        );
+        return const LaborantinShell();
       case 'pharmacien':
         return const PharmacienShell();
       case 'admin':
-        return const _ComingSoonShell(
-          role: 'admin',
-          label: 'Administrateur',
-          icon: Icons.admin_panel_settings_outlined,
-        );
+        return const AdminShell();
       default:
         return _ComingSoonShell(
           role: role,

@@ -14,6 +14,9 @@ dependencies:
   # Navigation
   go_router: ^14.0.0
 
+  #Flutter_launcher
+  flutter_launcher_icons: ^0.14.1
+
   #Réseau
   network_info_plus: ^6.0.0
 
@@ -50,3 +53,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0B3D91"
+  adaptive_icon_foreground: "assets/icons/app_icon.png"

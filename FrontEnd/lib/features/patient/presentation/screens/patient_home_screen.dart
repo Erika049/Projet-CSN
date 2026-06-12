@@ -185,14 +185,16 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
   Widget _buildHeader(Patient patient) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.fromLTRB(
+          20, 16, 20, 0),
       child: Row(
         children: [
+          // ── Initiales à gauche ─────────────────
           Container(
-            width: 40,
-            height: 40,
+            width: 40, height: 40,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
+              color: AppColors.primary
+                  .withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -209,7 +211,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Bonjour,',
@@ -229,22 +232,24 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               ],
             ),
           ),
+          // ── Cloche notifications ───────────────
           GestureDetector(
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const PatientNotificationsScreen(),
+                builder: (_) =>
+                const PatientNotificationsScreen(),
               ),
             ),
             child: Stack(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 40, height: 40,
                   decoration: BoxDecoration(
                     color: AppColors.backgroundWhite,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(
+                        color: AppColors.border),
                   ),
                   child: const Icon(
                     Icons.notifications_outlined,
@@ -254,11 +259,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 ),
                 if (_notifCount > 0)
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: 8, right: 8,
                     child: Container(
-                      width: 8,
-                      height: 8,
+                      width: 8, height: 8,
                       decoration: const BoxDecoration(
                         color: AppColors.error,
                         shape: BoxShape.circle,

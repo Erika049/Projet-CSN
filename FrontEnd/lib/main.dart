@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/theme/theme.dart';
-//import 'features/agent_accueil/presentation/screens/agent_accueil_shell.dart';
+import 'core/utils/app_navigator.dart';
 import 'features/auth/presentation/screens/app_entry.dart';
 
 void main() async {
@@ -19,6 +19,9 @@ class CarnetSanteApp extends StatelessWidget {
       title: 'Carnet Santé',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      // ── Clé globale pour navigation
+      // depuis intercepteurs Dio ──────
+      navigatorKey: AppNavigator.key,
       home: const AppEntry(),
     );
   }

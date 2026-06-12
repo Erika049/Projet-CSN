@@ -11,20 +11,22 @@ class PatientCarteScreen extends StatefulWidget {
   const PatientCarteScreen({super.key});
 
   @override
-  State<PatientCarteScreen> createState() => _PatientCarteScreenState();
+  State<PatientCarteScreen> createState() =>
+      _PatientCarteScreenState();
 }
 
-class _PatientCarteScreenState extends State<PatientCarteScreen>
+class _PatientCarteScreenState
+    extends State<PatientCarteScreen>
     with SingleTickerProviderStateMixin {
-  final _service = PatientApiService();
+  final _service     = PatientApiService();
   final _authService = AuthLocalService();
   Patient? _patient;
-  bool _loading = true;
-  String? _error;
-  bool _flipped = false;
+  bool     _loading = true;
+  String?  _error;
+  bool     _flipped = false;
 
   late AnimationController _flipController;
-  late Animation<double> _flipAnimation;
+  late Animation<double>   _flipAnimation;
 
   @override
   void initState() {
@@ -47,10 +49,7 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
   }
 
   Future<void> _loadData() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() { _loading = true; _error = null; });
     try {
       final userId = await _authService.getUserId();
       if (userId == null || userId.isEmpty) {
@@ -58,16 +57,10 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
       }
       final patient = await _service.getProfil(userId);
       if (!mounted) { return; }
-      setState(() {
-        _patient = patient;
-        _loading = false;
-      });
+      setState(() { _patient = patient; _loading = false; });
     } catch (e) {
       if (!mounted) { return; }
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
@@ -85,7 +78,8 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
       context: context,
       backgroundColor: AppColors.backgroundWhite,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(20)),
       ),
       builder: (_) => SafeArea(
         child: Padding(
@@ -94,8 +88,7 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40,
-                height: 4,
+                width: 40, height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.border,
                   borderRadius: BorderRadius.circular(2),
@@ -106,10 +99,8 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Ma carte numérique',
-                    style: AppTextStyles.h4,
-                  ),
+                  child: Text('Ma carte numérique',
+                      style: AppTextStyles.h4),
                 ),
               ),
               const SizedBox(height: 8),
@@ -118,7 +109,8 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
                 label: 'Recevoir une carte physique',
                 onTap: () {
                   Navigator.pop(context);
-                  _showSnack('Demande envoyée à l\'hôpital');
+                  _showSnack(
+                      'Demande envoyée à l\'hôpital');
                 },
               ),
               _SheetTile(
@@ -153,87 +145,6 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
     );
   }
 
-  void _showShareSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.backgroundWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Partager ma carte',
-                    style: AppTextStyles.h4,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  'L\'identifiant et le QR sont transmis chiffrés.',
-                  style: AppTextStyles.bodySmall,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _SheetTile(
-                icon: Icons.sms_outlined,
-                label: 'SMS',
-                onTap: () {
-                  Navigator.pop(context);
-                  _showSnack('Carte envoyée par SMS');
-                },
-              ),
-              _SheetTile(
-                icon: Icons.email_outlined,
-                label: 'Email',
-                onTap: () {
-                  Navigator.pop(context);
-                  _showSnack('Carte envoyée par email');
-                },
-              ),
-              _SheetTile(
-                icon: Icons.near_me_outlined,
-                label: 'AirDrop / NFC',
-                onTap: () {
-                  Navigator.pop(context);
-                  _showSnack('Recherche d\'appareils…');
-                },
-              ),
-              _SheetTile(
-                icon: Icons.link_outlined,
-                label: 'Lien temporaire (24 h)',
-                onTap: () {
-                  Navigator.pop(context);
-                  _showSnack('Lien copié dans le presse-papier');
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -250,9 +161,7 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
         backgroundColor: AppColors.backgroundLight,
         body: Center(
           child: CircularProgressIndicator(
-            color: AppColors.primary,
-            strokeWidth: 2,
-          ),
+              color: AppColors.primary, strokeWidth: 2),
         ),
       );
     }
@@ -290,26 +199,29 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 20),
           child: Column(
             children: [
               const SizedBox(height: 8),
 
-              // Carte flip 3D — tap OU swipe horizontal
+              // ── Carte flip 3D ───────────────────────
               Expanded(
                 child: Center(
                   child: GestureDetector(
                     onTap: _flip,
                     onHorizontalDragEnd: (details) {
                       if (details.primaryVelocity != null &&
-                          details.primaryVelocity!.abs() > 100) {
+                          details.primaryVelocity!.abs() >
+                              100) {
                         _flip();
                       }
                     },
                     child: AnimatedBuilder(
                       animation: _flipAnimation,
                       builder: (context, _) {
-                        final angle = _flipAnimation.value * math.pi;
+                        final angle =
+                            _flipAnimation.value * math.pi;
                         final isFront = angle < math.pi / 2;
                         return Transform(
                           alignment: Alignment.center,
@@ -320,9 +232,11 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
                               ? _CardFront(patient: patient)
                               : Transform(
                             alignment: Alignment.center,
-                            transform: Matrix4.identity()
+                            transform:
+                            Matrix4.identity()
                               ..rotateY(math.pi),
-                            child: _CardBack(patient: patient),
+                            child: _CardBack(
+                                patient: patient),
                           ),
                         );
                       },
@@ -333,18 +247,18 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
 
               const SizedBox(height: 16),
 
-              // Bouton retourner
+              // ── Bouton retourner ────────────────────
               GestureDetector(
                 onTap: _flip,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
+                      horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
                     color: AppColors.backgroundWhite,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: AppColors.borderDark),
+                    borderRadius:
+                    BorderRadius.circular(999),
+                    border: Border.all(
+                        color: AppColors.borderDark),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -372,21 +286,62 @@ class _PatientCarteScreenState extends State<PatientCarteScreen>
 
               const SizedBox(height: 14),
 
-              // Boutons Partager / Wallet
+              // ── Boutons Partager / Wallet ────────────
+              // Les deux sont grisés — fonctionnalités
+              // prévues en phase 2
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: _showShareSheet,
-                      child: const Text('Partager'),
+                    child: Tooltip(
+                      message:
+                      'Disponible prochainement',
+                      child: OutlinedButton(
+                        onPressed: null,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor:
+                          AppColors.textLight,
+                          side: BorderSide(
+                            color: AppColors.border,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment:
+                          MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.share_outlined,
+                                size: 16),
+                            SizedBox(width: 6),
+                            Text('Partager'),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () =>
-                          _showSnack('Carte ajoutée à Wallet'),
-                      child: const Text('Ajouter à Wallet'),
+                    child: Tooltip(
+                      message:
+                      'Disponible prochainement',
+                      child: ElevatedButton(
+                        onPressed: null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                          AppColors.border,
+                          foregroundColor:
+                          AppColors.textLight,
+                          elevation: 0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment:
+                          MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.account_balance_wallet_outlined,
+                                size: 16),
+                            SizedBox(width: 6),
+                            Text('Wallet'),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -426,7 +381,8 @@ class _CardFront extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0B57D0).withValues(alpha: 0.55),
+              color: const Color(0xFF0B57D0)
+                  .withValues(alpha: 0.55),
               blurRadius: 44,
               offset: const Offset(0, 22),
               spreadRadius: -18,
@@ -437,7 +393,6 @@ class _CardFront extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           child: Stack(
             children: [
-              // Motif guilloché
               Positioned.fill(
                 child: Opacity(
                   opacity: 0.10,
@@ -446,14 +401,16 @@ class _CardFront extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Colors.white, Colors.transparent],
+                        colors: [
+                          Colors.white,
+                          Colors.transparent
+                        ],
                       ),
                     ),
                   ),
                 ),
               ),
 
-              // Logo Pulse décoratif bas droite
               const Positioned(
                 right: -70,
                 bottom: -70,
@@ -467,44 +424,47 @@ class _CardFront extends StatelessWidget {
                 ),
               ),
 
-              // Encoche badge
               Positioned(
                 top: 12,
                 left: 0,
                 right: 0,
                 child: Center(
                   child: Container(
-                    width: 54,
-                    height: 9,
+                    width: 54, height: 9,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.32),
-                      borderRadius: BorderRadius.circular(999),
+                      color: Colors.white
+                          .withValues(alpha: 0.32),
+                      borderRadius:
+                      BorderRadius.circular(999),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: Colors.white
+                            .withValues(alpha: 0.45),
                       ),
                     ),
                   ),
                 ),
               ),
 
-              // Contenu
               Padding(
-                padding: const EdgeInsets.fromLTRB(22, 30, 22, 24),
+                padding: const EdgeInsets.fromLTRB(
+                    22, 30, 22, 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment:
+                  CrossAxisAlignment.center,
                   children: [
-                    // Header marque
                     Row(
                       children: [
                         Container(
-                          width: 38,
-                          height: 38,
+                          width: 38, height: 38,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(11),
+                            color: Colors.white
+                                .withValues(alpha: 0.14),
+                            borderRadius:
+                            BorderRadius.circular(11),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.28),
+                              color: Colors.white
+                                  .withValues(alpha: 0.28),
                             ),
                           ),
                           child: const Center(
@@ -517,7 +477,8 @@ class _CardFront extends StatelessWidget {
                         ),
                         const SizedBox(width: 11),
                         const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Carnet de Santé',
@@ -541,15 +502,18 @@ class _CardFront extends StatelessWidget {
                         ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 4,
-                          ),
+                          padding:
+                          const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(999),
+                            color: Colors.white
+                                .withValues(alpha: 0.16),
+                            borderRadius:
+                            BorderRadius.circular(999),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
+                              color: Colors.white
+                                  .withValues(alpha: 0.3),
                             ),
                           ),
                           child: const Text(
@@ -567,16 +531,17 @@ class _CardFront extends StatelessWidget {
 
                     const Spacer(),
 
-                    // Photo (initiales)
                     Container(
-                      width: 120,
-                      height: 120,
+                      width: 120, height: 120,
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(28),
+                        color: Colors.white
+                            .withValues(alpha: 0.16),
+                        borderRadius:
+                        BorderRadius.circular(28),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
+                          color: Colors.white
+                              .withValues(alpha: 0.3),
                         ),
                       ),
                       child: Container(
@@ -589,7 +554,8 @@ class _CardFront extends StatelessWidget {
                               Color(0xFFA9C6FA),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius:
+                          BorderRadius.circular(24),
                         ),
                         child: Center(
                           child: Text(
@@ -607,7 +573,6 @@ class _CardFront extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    // Identité
                     Text(
                       '${patient.prenom} ${patient.nom}',
                       style: const TextStyle(
@@ -630,16 +595,15 @@ class _CardFront extends StatelessWidget {
 
                     const Spacer(),
 
-                    // Séparateur
                     Container(
-                      height: 1,
-                      color: Colors.white.withValues(alpha: 0.18),
-                    ),
+                        height: 1,
+                        color: Colors.white
+                            .withValues(alpha: 0.18)),
                     const SizedBox(height: 16),
 
-                    // Champs bas
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
                       children: [
                         _CardField(
                           label: 'Né(e) le',
@@ -675,6 +639,18 @@ class _CardBack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ── Contact d'urgence ──────────────────────────
+    // Utilise urgenceNom/urgenceTelephone du patient
+    // Fallback si non renseigné
+    final urgenceNom = (patient.urgenceNom != null &&
+        patient.urgenceNom!.isNotEmpty)
+        ? patient.urgenceNom!
+        : 'Non renseigné';
+    final urgenceTel = (patient.urgenceTelephone != null &&
+        patient.urgenceTelephone!.isNotEmpty)
+        ? patient.urgenceTelephone!
+        : '';
+
     return SizedBox(
       width: 320,
       height: 560,
@@ -688,7 +664,8 @@ class _CardBack extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0B57D0).withValues(alpha: 0.55),
+              color: const Color(0xFF0B57D0)
+                  .withValues(alpha: 0.55),
               blurRadius: 44,
               offset: const Offset(0, 22),
               spreadRadius: -18,
@@ -699,19 +676,18 @@ class _CardBack extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           child: Stack(
             children: [
-              // Encoche badge
               Positioned(
                 top: 12,
                 left: 0,
                 right: 0,
                 child: Center(
                   child: Container(
-                    width: 54,
-                    height: 9,
+                    width: 54, height: 9,
                     decoration: BoxDecoration(
                       color: const Color(0xFF0B3D91)
                           .withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius:
+                      BorderRadius.circular(999),
                       border: Border.all(
                         color: const Color(0xFF0B3D91)
                             .withValues(alpha: 0.28),
@@ -721,7 +697,6 @@ class _CardBack extends StatelessWidget {
                 ),
               ),
 
-              // Bandeau magnétique
               Positioned(
                 top: 34,
                 left: 0,
@@ -730,19 +705,21 @@ class _CardBack extends StatelessWidget {
                   height: 34,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFF0B3D91), Color(0xFF1A73E8)],
+                      colors: [
+                        Color(0xFF0B3D91),
+                        Color(0xFF1A73E8)
+                      ],
                     ),
                   ),
                 ),
               ),
 
-              // Contenu
               Padding(
-                padding: const EdgeInsets.fromLTRB(22, 88, 22, 22),
+                padding: const EdgeInsets.fromLTRB(
+                    22, 88, 22, 22),
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    // Label + QR
                     const Text(
                       'PRÉSENTEZ À L\'ACCUEIL',
                       style: TextStyle(
@@ -757,8 +734,10 @@ class _CardBack extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.border),
+                        borderRadius:
+                        BorderRadius.circular(18),
+                        border: Border.all(
+                            color: AppColors.border),
                         boxShadow: [
                           BoxShadow(
                             color: const Color(0xFF0B3D91)
@@ -778,17 +757,17 @@ class _CardBack extends StatelessWidget {
                           eyeShape: QrEyeShape.square,
                           color: Color(0xFF0B3D91),
                         ),
-                        dataModuleStyle: const QrDataModuleStyle(
-                          dataModuleShape: QrDataModuleShape.square,
+                        dataModuleStyle:
+                        const QrDataModuleStyle(
+                          dataModuleShape:
+                          QrDataModuleShape.square,
                           color: Color(0xFF0B3D91),
                         ),
                       ),
                     ),
 
-
                     const Spacer(),
 
-                    // Stats validité
                     Row(
                       children: [
                         _BackStat(
@@ -811,15 +790,14 @@ class _CardBack extends StatelessWidget {
 
                     const SizedBox(height: 12),
 
-                    // Contact urgence
+                    // ── Contact urgence corrigé ────────
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
+                          horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         color: AppColors.errorLight,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius:
+                        BorderRadius.circular(12),
                         border: Border.all(
                           color: const Color(0xFFF7C9C4),
                         ),
@@ -832,27 +810,39 @@ class _CardBack extends StatelessWidget {
                             color: Color(0xFFB3261E),
                           ),
                           const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'CONTACT D\'URGENCE',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFB3261E),
-                                  letterSpacing: 0.6,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'CONTACT D\'URGENCE',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight:
+                                    FontWeight.w700,
+                                    color:
+                                    Color(0xFFB3261E),
+                                    letterSpacing: 0.6,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '${patient.nom.split(' ').first} T. · ${patient.telephone}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textDark,
+                                Text(
+                                  urgenceTel.isNotEmpty
+                                      ? '$urgenceNom · $urgenceTel'
+                                      : urgenceNom,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight:
+                                    FontWeight.w600,
+                                    color:
+                                    AppColors.textDark,
+                                  ),
+                                  maxLines: 1,
+                                  overflow:
+                                  TextOverflow.ellipsis,
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -860,9 +850,9 @@ class _CardBack extends StatelessWidget {
 
                     const SizedBox(height: 12),
 
-                    // Footer marque
                     const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment:
+                      MainAxisAlignment.center,
                       children: [
                         CsnMarkPulse(
                           size: 13,
@@ -897,14 +887,14 @@ class _CardBack extends StatelessWidget {
 class _CardField extends StatelessWidget {
   final String label;
   final String value;
-  final bool center;
-  final bool right;
+  final bool   center;
+  final bool   right;
 
   const _CardField({
     required this.label,
     required this.value,
     this.center = false,
-    this.right = false,
+    this.right  = false,
   });
 
   @override
@@ -948,7 +938,7 @@ class _CardField extends StatelessWidget {
 class _BackStat extends StatelessWidget {
   final String label;
   final String value;
-  final bool isDanger;
+  final bool   isDanger;
 
   const _BackStat({
     required this.label,
@@ -961,11 +951,11 @@ class _BackStat extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 9,
-        ),
+            horizontal: 10, vertical: 9),
         decoration: BoxDecoration(
-          color: isDanger ? AppColors.errorLight : Colors.white,
+          color: isDanger
+              ? AppColors.errorLight
+              : Colors.white,
           borderRadius: BorderRadius.circular(11),
           border: Border.all(
             color: isDanger
@@ -1003,9 +993,9 @@ class _BackStat extends StatelessWidget {
 }
 
 class _SheetTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color? color;
+  final IconData    icon;
+  final String      label;
+  final Color?      color;
   final VoidCallback onTap;
 
   const _SheetTile({
@@ -1019,7 +1009,8 @@ class _SheetTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = color ?? AppColors.textDark;
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      contentPadding:
+      const EdgeInsets.symmetric(horizontal: 24),
       leading: Icon(icon, color: c, size: 20),
       title: Text(
         label,

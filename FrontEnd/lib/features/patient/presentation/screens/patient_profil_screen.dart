@@ -288,6 +288,7 @@ class _PatientProfilScreenState extends State<PatientProfilScreen> {
     );
   }
 
+
   Widget _buildProfilCard() {
     // Utiliser les données API si disponibles, sinon fallback local
     final nom = _patient?.nomComplet ?? _fallbackName;

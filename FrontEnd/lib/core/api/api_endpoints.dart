@@ -59,15 +59,31 @@ class ApiEndpoints {
   static String dashboardInfirmier(String id) => '/infirmier/dashboard/$id';
   static String activiteInfirmier(String id)  => '/infirmier/activite/$id';
 
-  // ──────────────────────────────────────────────────────────
-  // PASSAGES & SOINS
-  // ──────────────────────────────────────────────────────────
+  // Pharmacien
+  static const String pharmOrdonnancesActives = '/pharmacien/ordonnances-actives';
+  static const String pharmHistorique = '/pharmacien/historique';
+
+  // ── Admin ────────────────────────────────────────────
+  static const String adminStats     = '/admin/stats';
+  static const String adminPersonnel = '/admin/personnel';
+  static const String adminHopitaux  = '/admin/hopitaux';
+  static const String adminLogs      = '/admin/logs';
+  static String adminToggleActif(String id) =>
+      '/admin/personnel/$id/toggle-actif';
+
+  // Passages
   static String constantes(String id)   => '/passages/$id/constantes';
   static String consultation(String id) => '/passages/$id/consultation';
-
   static String soin(String idPassage) => '/passages/$idPassage/soins';
   static String injection(String idPassage) => '/passages/$idPassage/injections';
 
-  // Laboratoire
-  static const String ajouterExamen = '/laboratoire/ajouter-examen';
+  // ── Laborantin ───────────────────────────────────────
+  static const String laboPassagesEnAttente =
+      '/laboratoire/passages-en-attente';
+  static const String laboHistorique =
+      '/laboratoire/historique';
+  static const String laboStats =
+      '/laboratoire/stats';
+  static const String laboAjouterExamen =
+      '/laboratoire/ajouter-examen';
 }
