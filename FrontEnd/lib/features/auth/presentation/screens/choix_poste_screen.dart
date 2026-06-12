@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
-import '../../domain/models/role_pro.dart';
 import 'login_pro_screen.dart';
+
+enum RolePro {
+  medecin,
+  infirmier,
+  accueil,
+  laborantin,
+  pharmacien,
+}
 
 class ChoixPosteScreen extends StatelessWidget {
   const ChoixPosteScreen({super.key});
