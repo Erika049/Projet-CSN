@@ -36,4 +36,24 @@ public class PassageController {
         passageService.ajouterConsultation(idPassage, request, authentication.getName());
         return ResponseEntity.ok(Map.of("message", "Dossier de consultation enregistré et archivé"));
     }
+
+    @Operation(summary = "Enregistrer un soin infirmier")
+    @PostMapping("/{idPassage}/soins")
+    public ResponseEntity<Map<String, String>> logSoin(@PathVariable UUID idPassage,
+                                                       @RequestBody Map<String, String> body,
+                                                       Authentication authentication) {
+        String desc = body.getOrDefault("typeSoin", "") + " - " + body.getOrDefault("description", "");
+        passageService.logSoin(idPassage, desc, authentication.getName());
+        return ResponseEntity.ok(Map.of("message", "Soin enregistré"));
+    }
+
+    @Operation(summary = "Enregistrer une injection")
+    @PostMapping("/{idPassage}/injections")
+    public ResponseEntity<Map<String, String>> logInjection(@PathVariable UUID idPassage,
+                                                            @RequestBody Map<String, String> body,
+                                                            Authentication authentication) {
+        String desc = body.getOrDefault("medicament", "") + " " + body.getOrDefault("dose", "") + " via " + body.getOrDefault("voie", "");
+        passageService.logInjection(idPassage, desc, authentication.getName());
+        return ResponseEntity.ok(Map.of("message", "Injection enregistrée"));
+    }
 }

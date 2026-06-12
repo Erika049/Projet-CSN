@@ -20,6 +20,28 @@ public class PassageService {
     private final LogService logService;
 
     @Transactional
+    public void logSoin(UUID idPassage, String description, String username) {
+        PassageMedical passage = passageRepo.findById(idPassage)
+                .orElseThrow(() -> new RuntimeException("Passage introuvable"));
+        
+        PersonnelMedical personnel = personnelRepo.findByIdentifiantPro(username).orElse(null);
+        logService.logAction(personnel != null ? personnel.getIdPersonnel() : null,
+                passage.getPatient().getIdPatient(),
+                "SOIN_REALISE", passage.getIdPassage(), description);
+    }
+
+    @Transactional
+    public void logInjection(UUID idPassage, String description, String username) {
+        PassageMedical passage = passageRepo.findById(idPassage)
+                .orElseThrow(() -> new RuntimeException("Passage introuvable"));
+        
+        PersonnelMedical personnel = personnelRepo.findByIdentifiantPro(username).orElse(null);
+        logService.logAction(personnel != null ? personnel.getIdPersonnel() : null,
+                passage.getPatient().getIdPatient(),
+                "INJECTION_IV", passage.getIdPassage(), description);
+    }
+
+    @Transactional
     public void updateConstantes(UUID idPassage, ConstantesVitalesRequest request, String username) {
         PassageMedical passage = passageRepo.findById(idPassage)
                 .orElseThrow(() -> new RuntimeException("Passage introuvable"));
