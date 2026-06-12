@@ -8,7 +8,8 @@ class PatientApiService {
   // ── Profil ───────────────────────────────────
   Future<Patient> getProfil(String idPatient) async {
     try {
-      final res = await _dio.get(ApiEndpoints.profil(idPatient));
+      final res = await _dio.get(
+          ApiEndpoints.profil(idPatient));
       return _parsePatient(res.data);
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
@@ -16,9 +17,11 @@ class PatientApiService {
   }
 
   // ── Historique ───────────────────────────────
-  Future<List<PassageMedical>> getHistorique(String idPatient) async {
+  Future<List<PassageMedical>> getHistorique(
+      String idPatient) async {
     try {
-      final res = await _dio.get(ApiEndpoints.historique(idPatient));
+      final res = await _dio.get(
+          ApiEndpoints.historique(idPatient));
       return (res.data as List)
           .map((p) => _parsePassage(p))
           .toList();
@@ -28,7 +31,8 @@ class PatientApiService {
   }
 
   // ── Passage en cours ─────────────────────────
-  Future<PassageMedical?> getPassageEnCours(String idPatient) async {
+  Future<PassageMedical?> getPassageEnCours(
+      String idPatient) async {
     try {
       final res = await _dio.get(
           ApiEndpoints.passageEnCours(idPatient));
@@ -41,7 +45,8 @@ class PatientApiService {
   }
 
   // ── Ordonnances ──────────────────────────────
-  Future<List<Ordonnance>> getOrdonnances(String idPatient) async {
+  Future<List<Ordonnance>> getOrdonnances(
+      String idPatient) async {
     try {
       final res = await _dio.get(
           ApiEndpoints.ordonnances(idPatient));
@@ -66,7 +71,8 @@ class PatientApiService {
     }
   }
 
-  Future<Ordonnance> getOrdonnanceDetail(String idOrdonnance) async {
+  Future<Ordonnance> getOrdonnanceDetail(
+      String idOrdonnance) async {
     try {
       final res = await _dio.get(
           ApiEndpoints.ordonnanceDetail(idOrdonnance));
@@ -92,7 +98,8 @@ class PatientApiService {
 
   Future<int> getNombreNonLues(String idPatient) async {
     try {
-      final res = await _dio.get(ApiEndpoints.nonLues(idPatient));
+      final res = await _dio.get(
+          ApiEndpoints.nonLues(idPatient));
       return res.data['count'] as int;
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
@@ -109,7 +116,8 @@ class PatientApiService {
 
   Future<void> marquerLue(String idNotification) async {
     try {
-      await _dio.put(ApiEndpoints.marquerLue(idNotification));
+      await _dio.put(
+          ApiEndpoints.marquerLue(idNotification));
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
     }
@@ -121,19 +129,22 @@ class PatientApiService {
 
   Patient _parsePatient(Map<String, dynamic> data) {
     return Patient(
-      id: data['idPatient'] ?? '',
-      nom: data['nom'] ?? '',
-      prenom: data['prenom'] ?? '',
+      id:            data['idPatient']?.toString() ?? '',
+      nom:           data['nom']?.toString()       ?? '',
+      prenom:        data['prenom']?.toString()    ?? '',
       dateNaissance: data['dateNaissance'] != null
           ? _formatDate(data['dateNaissance'].toString())
           : '',
-      genre: data['genre']?.toString() ?? 'M',
-      groupeSanguin: data['groupeSanguin'] ?? '',
-      telephone: data['telephone'] ?? '',
-      email: data['email'],
+      genre:         data['genre']?.toString()     ?? 'M',
+      groupeSanguin: data['groupeSanguin']?.toString() ?? '',
+      telephone:     data['telephone']?.toString() ?? '',
+      email:         data['email']?.toString(),
+      // ── Contact urgence ──────────────────────
+      urgenceNom:       data['urgenceNom']?.toString(),
+      urgenceTelephone: data['urgenceTelephone']?.toString(),
       carte: CarteNumerique(
-        qrCodeToken: data['qrCodeToken'] ?? '',
-        statut: data['carteStatut'] ?? 'actif',
+        qrCodeToken: data['qrCodeToken']?.toString() ?? '',
+        statut:      data['carteStatut']?.toString() ?? 'actif',
         expireAnnee: data['carteExpiration'] != null
             ? data['carteExpiration'].toString().substring(0, 4)
             : '2028',
@@ -144,80 +155,88 @@ class PatientApiService {
     );
   }
 
-  PassageMedical _parsePassage(Map<String, dynamic> data) {
-    final constData = data['constantes'] as Map<String, dynamic>?;
+  PassageMedical _parsePassage(
+      Map<String, dynamic> data) {
+    final constData =
+    data['constantes'] as Map<String, dynamic>?;
     ConstantesVitales? constantes;
     if (constData != null) {
       constantes = ConstantesVitales(
-        tension: constData['tension']?.toString(),
+        tension:     constData['tension']?.toString(),
         temperature: constData['temperature']?.toString(),
-        poids: constData['poids']?.toString(),
-        pouls: constData['pouls']?.toString(),
+        poids:       constData['poids']?.toString(),
+        pouls:       constData['pouls']?.toString(),
       );
     }
 
     final examensData = data['examens'] as List? ?? [];
     final examens = examensData.map((e) => ExamenLabo(
-      id: e['idExamen'].toString(),
-      type: e['type'] ?? '',
-      resultats: e['resultats'] ?? '',
+      id:          e['idExamen'].toString(),
+      type:        e['type']?.toString()      ?? '',
+      resultats:   e['resultats']?.toString() ?? '',
       dateResultat: _formatDateTime(
           e['dateResultat']?.toString() ?? ''),
     )).toList();
 
-    final dateAdmission = data['dateAdmission']?.toString() ?? '';
+    final dateAdmission =
+        data['dateAdmission']?.toString() ?? '';
 
     return PassageMedical(
-      id: data['idPassage'] ?? '',
-      hopital: data['hopital'] ?? '',
-      service: data['service'] ?? data['motif'] ?? '',
-      dateAdmission: _formatDateSimple(dateAdmission),
+      id:             data['idPassage']?.toString() ?? '',
+      hopital:        data['hopital']?.toString()   ?? '',
+      service:        data['service']?.toString()   ??
+          data['motif']?.toString()     ?? '',
+      dateAdmission:  _formatDateSimple(dateAdmission),
       heureAdmission: _formatHeure(dateAdmission),
-      motifVisite: data['motif'] ?? '',
-      statut: data['statut'] ?? 'termine',
-      medecin: data['medecin'],
-      constantes: constantes,
-      diagnostic: data['diagnostic'],
-      prescription: data['prescription'],
-      examens: examens,
+      motifVisite:    data['motif']?.toString()     ?? '',
+      statut:         data['statut']?.toString()    ?? 'termine',
+      medecin:        data['medecin']?.toString(),
+      constantes:     constantes,
+      diagnostic:     data['diagnostic']?.toString(),
+      prescription:   data['prescription']?.toString(),
+      examens:        examens,
     );
   }
 
-  Ordonnance _parseOrdonnance(Map<String, dynamic> data) {
+  Ordonnance _parseOrdonnance(
+      Map<String, dynamic> data) {
     final medsData = data['medicaments'] as List? ?? [];
     final medicaments = medsData.map((m) => Medicament(
-      nom: m['nom'] ?? '',
-      posologie: m['posologie'] ?? '',
+      nom:              m['nom']?.toString()      ?? '',
+      posologie:        m['posologie']?.toString() ?? '',
       comprimesRestants: m['comprimesRestants'] as int?,
-      comprimesTotaux: m['comprimesTotaux'] as int?,
+      comprimesTotaux:   m['comprimesTotaux']   as int?,
     )).toList();
 
     return Ordonnance(
-      id: data['idOrdonnance'] ?? '',
-      titre: data['titre'] ?? '',
-      medecin: data['medecin'] ?? '',
-      specialite: data['specialite'] ?? '',
+      id:             data['idOrdonnance']?.toString() ?? '',
+      titre:          data['titre']?.toString()        ?? '',
+      medecin:        data['medecin']?.toString()      ?? '',
+      specialite:     data['specialite']?.toString()   ?? '',
       dateDelivrance: data['dateDelivrance'] != null
-          ? _formatDate(data['dateDelivrance'].toString())
+          ? _formatDate(
+          data['dateDelivrance'].toString())
           : '',
       dateExpiration: data['dateExpiration'] != null
-          ? _formatDate(data['dateExpiration'].toString())
+          ? _formatDate(
+          data['dateExpiration'].toString())
           : '',
-      statut: data['statut'] ?? 'active',
-      joursRestants: data['joursRestants'] as int? ?? 0,
-      medicaments: medicaments,
+      statut:        data['statut']?.toString()       ?? 'active',
+      joursRestants: data['joursRestants'] as int?    ?? 0,
+      medicaments:   medicaments,
     );
   }
 
-  Notification _parseNotification(Map<String, dynamic> data) {
+  Notification _parseNotification(
+      Map<String, dynamic> data) {
     return Notification(
-      id: data['idNotification'].toString(),
-      titre: data['titre'] ?? '',
-      message: data['message'] ?? '',
-      temps: _formatDateTimeRelative(
+      id:      data['idNotification'].toString(),
+      titre:   data['titre']?.toString()   ?? '',
+      message: data['message']?.toString() ?? '',
+      temps:   _formatDateTimeRelative(
           data['creeLe']?.toString() ?? ''),
-      type: data['type'] ?? 'info',
-      lue: data['lue'] as bool? ?? false,
+      type: data['type']?.toString() ?? 'info',
+      lue:  data['lue'] as bool?     ?? false,
     );
   }
 
@@ -235,7 +254,7 @@ class PatientApiService {
 
   String _formatDateSimple(String iso) {
     try {
-      final d = DateTime.parse(iso);
+      final d   = DateTime.parse(iso);
       final now = DateTime.now();
       if (d.year == now.year &&
           d.month == now.month &&
@@ -261,7 +280,6 @@ class PatientApiService {
 
   String _formatDateTime(String iso) {
     try {
-      final d = DateTime.parse(iso);
       return '${_formatDate(iso)} · ${_formatHeure(iso)}';
     } catch (_) {
       return iso;
@@ -270,7 +288,7 @@ class PatientApiService {
 
   String _formatDateTimeRelative(String iso) {
     try {
-      final d = DateTime.parse(iso);
+      final d    = DateTime.parse(iso);
       final diff = DateTime.now().difference(d);
       if (diff.inMinutes < 60) {
         return 'il y a ${diff.inMinutes} min';

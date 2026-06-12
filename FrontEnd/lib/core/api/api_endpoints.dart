@@ -6,7 +6,7 @@ class ApiEndpoints {
   // Si tu changes de réseau → mets à jour ici
   // Émulateur Android → utilise 10.0.2.2
   // ════════════════════════════════════════════
-  static const String baseUrl = 'http://192.168.1.180:8080/api/v1';
+  static const String baseUrl = 'https://projet-csn.onrender.com/api/v1';
 
   // Vérification réseau
   static const String networkCheck = '/network/check';
@@ -24,6 +24,16 @@ class ApiEndpoints {
   static String passageEnCours(String id) => '/patients/$id/passage-en-cours';
   static String qrCode(String id)         => '/patients/$id/qr-code';
 
+  // ── Médecin ──────────────────────────────────────────
+  static const String medecinPatientsDuJour =
+      '/medecin/patients-du-jour';
+  static const String medecinStatsDuJour =
+      '/medecin/stats-du-jour';
+  static const String medecinActivite =
+      '/medecin/activite';
+  static String medecinPassageDetail(String id) =>
+      '/medecin/passages/$id';
+
   // Ordonnances
   static String ordonnances(String id)       => '/ordonnances/patient/$id';
   static String ordonnancesActives(String id) => '/ordonnances/patient/$id/actives';
@@ -36,14 +46,29 @@ class ApiEndpoints {
   static String toutLire(String id)         => '/notifications/patient/$id/tout-lire';
   static String marquerLue(String id)       => '/notifications/$id/lire';
 
-  // Admission
+  // Admission (utilisé par le parcours agent d'accueil)
   static const String scanCarte    = '/admission/scan-carte';
   static const String creerPassage = '/admission/creer-passage';
+
+  // ── Admin ────────────────────────────────────────────
+  static const String adminStats     = '/admin/stats';
+  static const String adminPersonnel = '/admin/personnel';
+  static const String adminHopitaux  = '/admin/hopitaux';
+  static const String adminLogs      = '/admin/logs';
+  static String adminToggleActif(String id) =>
+      '/admin/personnel/$id/toggle-actif';
 
   // Passages
   static String constantes(String id)   => '/passages/$id/constantes';
   static String consultation(String id) => '/passages/$id/consultation';
 
-  // Laboratoire
-  static const String ajouterExamen = '/laboratoire/ajouter-examen';
+  // ── Laborantin ───────────────────────────────────────
+  static const String laboPassagesEnAttente =
+      '/laboratoire/passages-en-attente';
+  static const String laboHistorique =
+      '/laboratoire/historique';
+  static const String laboStats =
+      '/laboratoire/stats';
+  static const String laboAjouterExamen =
+      '/laboratoire/ajouter-examen';
 }

@@ -3,7 +3,173 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../data/agent_accueil_mock_data.dart';
 
-/// Carte statistique colorée (utilisée sur Dashboard et Mon activité).
+// ===========================================================================
+// Widgets partages (autrefois dans patient_widgets.dart, integres ici pour
+// rendre la feature agent_accueil autonome).
+// ===========================================================================
+
+class AppCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final VoidCallback? onTap;
+
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final card = Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppColors.backgroundWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: child,
+    );
+    if (onTap == null) return card;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: card,
+    );
+  }
+}
+
+class SectionHeader extends StatelessWidget {
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const SectionHeader({
+    super.key,
+    required this.title,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textDark,
+          ),
+        ),
+        if (actionLabel != null)
+          GestureDetector(
+            onTap: onAction,
+            child: Text(
+              actionLabel!,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class StatusChip extends StatelessWidget {
+  final String label;
+  final Color foreground;
+  final Color background;
+  final bool dot;
+
+  const StatusChip({
+    super.key,
+    required this.label,
+    required this.foreground,
+    required this.background,
+    this.dot = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (dot) ...[
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: foreground,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              color: foreground,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class InitialsAvatar extends StatelessWidget {
+  final String initials;
+  final double size;
+  final Color background;
+  final Color foreground;
+
+  const InitialsAvatar({
+    super.key,
+    required this.initials,
+    this.size = 44,
+    this.background = AppColors.primaryLight,
+    this.foreground = AppColors.primary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+      child: Text(
+        initials.toUpperCase(),
+        style: TextStyle(
+          color: foreground,
+          fontWeight: FontWeight.w700,
+          fontSize: size * 0.36,
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Widgets specifiques agent_accueil.
+// ===========================================================================
+
 class StatCard extends StatelessWidget {
   final String value;
   final String label;
@@ -53,8 +219,6 @@ class StatCard extends StatelessWidget {
   }
 }
 
-/// Champ "dropdown" stylisé (visuel uniquement pour l'instant, n'ouvre pas de
-/// menu — branchement de vraies options à venir).
 class FakeDropdown extends StatelessWidget {
   final String value;
 
@@ -88,7 +252,6 @@ class FakeDropdown extends StatelessWidget {
   }
 }
 
-/// Couleurs / icône / libellé du badge associés à un type d'activité.
 ({IconData icon, Color fg, Color bg, String badge}) activityVisual(
     ActivityKind kind) {
   switch (kind) {
@@ -104,7 +267,7 @@ class FakeDropdown extends StatelessWidget {
       icon: Icons.add,
       fg: AppColors.primary,
       bg: AppColors.primaryLight,
-      badge: 'Création',
+      badge: 'Creation',
       );
     case ActivityKind.urgence:
       return (

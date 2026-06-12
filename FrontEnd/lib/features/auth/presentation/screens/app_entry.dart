@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../../core/utils/utils.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../data/auth_local_service.dart';
+import 'biometric_screen.dart';
 import 'loader_screen.dart';
 import 'splash_screen.dart';
 import 'login_screen.dart';
-import '../../../patient/presentation/screens/patient_shell.dart';
-import '../../../agent_accueil/presentation/screens/agent_accueil_shell.dart';
-import '../../../infirmier/presentation/screens/infirmier_shell.dart';
-import '../../../pharmacien/presentation/screens/pharmacien_shell.dart';
 
 class AppEntry extends StatefulWidget {
   const AppEntry({super.key});
@@ -19,9 +16,8 @@ class AppEntry extends StatefulWidget {
 
 class _AppEntryState extends State<AppEntry> {
   // ════════════════════════════════════════════
-  // Vérification réseau hospitalier au démarrage.
-  // Mettre à `true` pour réactiver le blocage réseau.
-  // (Le code de vérification est conservé, juste désactivé.)
+  // Mettre à true pour réactiver le blocage
+  // réseau hospitalier au démarrage.
   // ════════════════════════════════════════════
   static const bool _networkCheckEnabled = false;
 
@@ -38,7 +34,6 @@ class _AppEntryState extends State<AppEntry> {
   Future<void> _init() async {
     setState(() => _step = _AppEntryStep.loading);
 
-    // Vérification réseau désactivée → flux normal direct
     if (!_networkCheckEnabled) {
       await Future.delayed(const Duration(milliseconds: 2200));
       if (!mounted) { return; }
@@ -47,7 +42,6 @@ class _AppEntryState extends State<AppEntry> {
       return;
     }
 
-    // 1) Vérification réseau + délai minimum loader
     late NetworkStatus networkStatus;
     try {
       final results = await Future.wait([
@@ -61,14 +55,12 @@ class _AppEntryState extends State<AppEntry> {
 
     if (!mounted) { return; }
 
-    // 2) Réseau hospitalier → mode normal
     if (networkStatus == NetworkStatus.authorized) {
       AppMode().setOnline();
       await _navigateBySession();
       return;
     }
 
-    // 3) Pas sur le réseau hospitalier → afficher l'écran de blocage
     _networkStatus = networkStatus;
     setState(() => _step = _AppEntryStep.networkBlocked);
   }
@@ -79,36 +71,36 @@ class _AppEntryState extends State<AppEntry> {
 
     if (!mounted) { return; }
 
-    if (!isLoggedIn) {
+    if (!isLoggedIn || role == null) {
       _goTo(const SplashScreen());
       return;
     }
 
-    switch (role) {
-      case 'patient':
-        _goTo(const PatientShell());
-        break;
-      case 'infirmier':
-        _goTo(const InfirmierShell());
-        break;
-      case 'accueil':
-        _goTo(const AgentAccueilShell());
-        break;
-      case 'pharmacien':
-        _goTo(const PharmacienShell());
-        break;
-      default:
-        _goTo(const SplashScreen());
+    // ── Vérification biométrique si activée ──
+    final biometricEnabled = await _authService.isBiometricEnabled();
+
+    if (biometricEnabled) {
+      final available = await BiometricHelper.isAvailable();
+      if (available) {
+        final userName = await _authService.getUserName() ?? '';
+        if (!mounted) { return; }
+        // Afficher le BiometricScreen avec le beau design
+        _goTo(BiometricScreen(
+          userName: userName,
+          role: role,
+        ));
+        return;
+      }
     }
+
+    // Pas de biométrie → dashboard direct
+    _goTo(LoginScreen.shellForRole(role));
   }
 
-  void _onRetry() {
-    _init();
-  }
+  void _onRetry() => _init();
 
   void _onOfflineMode() {
     AppMode().setOffline();
-    // Toujours passer par le login en mode hors-réseau
     _goTo(const LoginScreen());
   }
 
@@ -142,7 +134,9 @@ class _AppEntryState extends State<AppEntry> {
 
 enum _AppEntryStep { loading, networkBlocked }
 
-// ==================== ÉCRAN BLOCAGE RÉSEAU ====================
+// ══════════════════════════════════════════════════════
+// Écran de blocage réseau
+// ══════════════════════════════════════════════════════
 class _NetworkBlockScreen extends StatelessWidget {
   final NetworkStatus status;
   final VoidCallback onRetry;
@@ -176,7 +170,6 @@ class _NetworkBlockScreen extends StatelessWidget {
               children: [
                 const Spacer(),
 
-                // Icône
                 Container(
                   width: 80,
                   height: 80,
@@ -264,7 +257,6 @@ class _NetworkBlockScreen extends StatelessWidget {
 
                 const Spacer(),
 
-                // Réessayer
                 SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -276,7 +268,6 @@ class _NetworkBlockScreen extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                // Mode hors-réseau
                 SizedBox(
                   width: double.infinity,
                   height: 52,

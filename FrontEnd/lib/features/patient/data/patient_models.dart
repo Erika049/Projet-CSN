@@ -1,15 +1,17 @@
-// Modèles de données Patient — utilisés par l'UI et futurs appels API
+// Modèles de données Patient — utilisés par l'UI et appels API
 
 class Patient {
-  final String id;
-  final String nom;
-  final String prenom;
-  final String dateNaissance;
-  final String genre;
-  final String groupeSanguin;
-  final String telephone;
+  final String  id;
+  final String  nom;
+  final String  prenom;
+  final String  dateNaissance;
+  final String  genre;
+  final String  groupeSanguin;
+  final String  telephone;
   final String? email;
   final String? photoUrl;
+  final String? urgenceNom;
+  final String? urgenceTelephone;
   final CarteNumerique carte;
 
   const Patient({
@@ -22,18 +24,20 @@ class Patient {
     required this.telephone,
     this.email,
     this.photoUrl,
+    this.urgenceNom,
+    this.urgenceTelephone,
     required this.carte,
   });
 
   String get nomComplet => '$prenom $nom';
   String get initiales =>
-      '${prenom.isNotEmpty ? prenom[0] : ''}${nom.isNotEmpty ? nom[0] : ''}'
-          .toUpperCase();
+      '${prenom.isNotEmpty ? prenom[0] : ''}'
+          '${nom.isNotEmpty ? nom[0] : ''}'.toUpperCase();
 }
 
 class CarteNumerique {
   final String qrCodeToken;
-  final String statut; // actif | suspendu | perdu
+  final String statut;
   final String expireAnnee;
   final String expireMois;
 
@@ -44,7 +48,7 @@ class CarteNumerique {
     required this.expireMois,
   });
 
-  bool get estActive => statut == 'actif';
+  bool   get estActive  => statut == 'actif';
   String get expiration => '$expireMois/$expireAnnee';
 }
 
@@ -55,7 +59,7 @@ class PassageMedical {
   final String dateAdmission;
   final String heureAdmission;
   final String motifVisite;
-  final String statut; // en_cours | termine
+  final String statut;
   final String? medecin;
   final ConstantesVitales? constantes;
   final String? diagnostic;
@@ -119,8 +123,8 @@ class Ordonnance {
   final String specialite;
   final String dateDelivrance;
   final String dateExpiration;
-  final String statut; // active | expiree | terminee
-  final int joursRestants;
+  final String statut;
+  final int    joursRestants;
   final List<Medicament> medicaments;
 
   const Ordonnance({
@@ -141,8 +145,8 @@ class Ordonnance {
 class Medicament {
   final String nom;
   final String posologie;
-  final int? comprimesRestants;
-  final int? comprimesTotaux;
+  final int?   comprimesRestants;
+  final int?   comprimesTotaux;
 
   const Medicament({
     required this.nom,
@@ -157,8 +161,8 @@ class Notification {
   final String titre;
   final String message;
   final String temps;
-  final String type; // examen | ordonnance | admission | acces | securite
-  final bool lue;
+  final String type;
+  final bool   lue;
 
   const Notification({
     required this.id,

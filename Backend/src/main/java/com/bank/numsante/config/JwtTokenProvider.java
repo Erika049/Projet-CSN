@@ -16,13 +16,23 @@ public class JwtTokenProvider {
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secret,
                             @Value("${jwt.expiration}") long expiration) {
+        // Log pour débugger sur Render
+        System.out.println("=== JWT INIT ===");
+        System.out.println("Secret null ? " + (secret == null));
+        System.out.println("Secret vide ? " + (secret != null && secret.isBlank()));
+        System.out.println("Secret longueur : " + (secret != null ? secret.length() : 0));
+
         try {
             this.key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(secret));
+            System.out.println("=== JWT OK ===");
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("La clé JWT doit être encodée en Base64 et avoir au moins 256 bits", e);
+            System.out.println("=== JWT ERREUR : " + e.getMessage() + " ===");
+            throw new IllegalArgumentException(
+                    "La clé JWT doit être encodée en Base64 et avoir au moins 256 bits", e);
         }
         this.expiration = expiration;
     }
+
 
     public String generateToken(String username, String role) {
         Date now = new Date();

@@ -1,22 +1,58 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../core/theme/theme.dart';
 import 'agent_acceuil_confirmation_passage_screen.dart';
 
-
 /// Écran "Scanner la carte" (AGENT 15/41).
 ///
-/// La caméra n'est pas branchée (mobile_scanner pas encore configuré). Cet
-/// écran est un mock visuel : le gros bouton bleu central simule un scan
-/// réussi et ouvre l'écran de confirmation. Quand le scanner réel sera
-/// branché, remplacer le contenu de `_ScanArea` par un `MobileScanner`.
+/// Caméra réelle via `mobile_scanner` : à la lecture d'un QR, on récupère le
+/// token de la carte et on ouvre l'écran de confirmation, qui interroge le
+/// backend (`/admission/scan-carte`) pour identifier le patient.
 ///
 /// [embedded] passe à `true` quand l'écran est intégré comme onglet dans la
 /// coquille (pas de bouton retour, on change d'onglet pour quitter).
-class ScannerCarteScreen extends StatelessWidget {
+class ScannerCarteScreen extends StatefulWidget {
   final bool embedded;
 
   const ScannerCarteScreen({super.key, this.embedded = false});
+
+  @override
+  State<ScannerCarteScreen> createState() => _ScannerCarteScreenState();
+}
+
+class _ScannerCarteScreenState extends State<ScannerCarteScreen> {
+  final MobileScannerController _controller = MobileScannerController();
+  bool _handled = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onDetect(BarcodeCapture capture) async {
+    if (_handled) return;
+    final code =
+        capture.barcodes.isNotEmpty ? capture.barcodes.first.rawValue : null;
+    if (code == null || code.isEmpty) return;
+
+    setState(() => _handled = true);
+    await _controller.stop();
+    if (!mounted) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ConfirmationPassageScreen(qrToken: code),
+      ),
+    );
+
+    // Retour sur le scanner → on réautorise une nouvelle lecture.
+    if (!mounted) return;
+    setState(() => _handled = false);
+    await _controller.start();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +61,10 @@ class ScannerCarteScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _TopBar(embedded: embedded),
-            const Expanded(child: _ScanArea()),
+            _TopBar(embedded: widget.embedded, controller: _controller),
+            Expanded(
+              child: _ScanArea(controller: _controller, onDetect: _onDetect),
+            ),
             const _BottomPanel(),
           ],
         ),
@@ -37,7 +75,8 @@ class ScannerCarteScreen extends StatelessWidget {
 
 class _TopBar extends StatelessWidget {
   final bool embedded;
-  const _TopBar({required this.embedded});
+  final MobileScannerController controller;
+  const _TopBar({required this.embedded, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -88,8 +127,8 @@ class _TopBar extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.flash_off, color: Colors.white, size: 18),
+              onPressed: () => controller.toggleTorch(),
+              icon: const Icon(Icons.flash_on, color: Colors.white, size: 18),
               padding: EdgeInsets.zero,
             ),
           ),
@@ -100,7 +139,9 @@ class _TopBar extends StatelessWidget {
 }
 
 class _ScanArea extends StatelessWidget {
-  const _ScanArea();
+  final MobileScannerController controller;
+  final void Function(BarcodeCapture) onDetect;
+  const _ScanArea({required this.controller, required this.onDetect});
 
   @override
   Widget build(BuildContext context) {
@@ -111,60 +152,32 @@ class _ScanArea extends StatelessWidget {
           padding: const EdgeInsets.all(40),
           child: Stack(
             children: [
-              _Corner(top: true, left: true),
-              _Corner(top: true, left: false),
-              _Corner(top: false, left: true),
-              _Corner(top: false, left: false),
-              Center(
-                child: Container(
-                  width: 220,
-                  height: 130,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.qr_code_2, size: 56, color: Colors.white),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'CARNET SANTÉ',
-                              style: TextStyle(
-                                color: Color(0xFFCBD5E1),
-                                fontSize: 10,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'J. TCHAMENI',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              '8f3b···0000',
-                              style: TextStyle(
-                                color: Color(0xFFCBD5E1),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox.expand(
+                  child: MobileScanner(
+                    controller: controller,
+                    onDetect: onDetect,
+                    errorBuilder: (context, error, child) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text(
+                            'Caméra indisponible.\n'
+                            'Vérifiez les autorisations de l’appareil.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white70),
+                          ),
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ),
+              const _Corner(top: true, left: true),
+              const _Corner(top: true, left: false),
+              const _Corner(top: false, left: true),
+              const _Corner(top: false, left: false),
             ],
           ),
         ),
@@ -219,9 +232,9 @@ class _BottomPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -241,26 +254,7 @@ class _BottomPanel extends StatelessWidget {
                   ],
                 ),
               ),
-              GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ConfirmationPassageScreen(),
-                  ),
-                ),
-                child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.qr_code_scanner,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+              Icon(Icons.qr_code_scanner, color: AppColors.primary, size: 36),
             ],
           ),
           const SizedBox(height: 16),

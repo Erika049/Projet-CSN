@@ -1,13 +1,23 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/utils/app_mode.dart';
+import '../../../../core/api/api_endpoints.dart';
 import '../../data/auth_local_service.dart';
+import 'loader_screen.dart';
+import 'login_screen.dart';
 import 'splash_screen.dart';
 
 class BiometricScreen extends StatefulWidget {
   final String userName;
+  final String role;
 
-  const BiometricScreen({super.key, required this.userName});
+  const BiometricScreen({
+    super.key,
+    required this.userName,
+    required this.role,
+  });
 
   @override
   State<BiometricScreen> createState() => _BiometricScreenState();
@@ -33,7 +43,10 @@ class _BiometricScreenState extends State<BiometricScreen>
     )..repeat(reverse: true);
 
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+      CurvedAnimation(
+        parent: _pulseController,
+        curve: Curves.easeInOut,
+      ),
     );
 
     _checkBiometrics();
@@ -48,8 +61,10 @@ class _BiometricScreenState extends State<BiometricScreen>
   Future<void> _checkBiometrics() async {
     try {
       final available = await _localAuth.canCheckBiometrics;
+      if (!mounted) { return; }
       setState(() => _biometricAvailable = available);
     } catch (_) {
+      if (!mounted) { return; }
       setState(() => _biometricAvailable = false);
     }
   }
@@ -58,51 +73,56 @@ class _BiometricScreenState extends State<BiometricScreen>
     setState(() => _isLoading = true);
     try {
       final result = await _localAuth.authenticate(
-        localizedReason: 'Authentifiez-vous pour acceder a votre carnet sante',
+        localizedReason:
+        'Authentifiez-vous pour accéder à votre carnet santé',
         options: const AuthenticationOptions(
           biometricOnly: false,
           stickyAuth: true,
         ),
       );
+      if (!mounted) { return; }
       setState(() {
         _authenticated = result;
         _isLoading = false;
       });
-      if (result && mounted) {
+      if (result) {
         _navigateToDashboard();
       }
     } catch (e) {
+      if (!mounted) { return; }
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur : ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur : ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
   void _navigateToDashboard() {
-    // TODO: Naviguer vers le dashboard selon le role stocke
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Authentification reussie ! (Dashboard a venir)'),
-        backgroundColor: AppColors.success,
+    Navigator.pushAndRemoveUntil(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) =>
+            _LoadingThenDashboard(role: widget.role),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+        transitionDuration: const Duration(milliseconds: 600),
       ),
+          (route) => false,
     );
   }
 
   Future<void> _logout() async {
     await _authService.logout();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const SplashScreen()),
-        (_) => false,
-      );
-    }
+    AppMode().reset();
+    if (!mounted) { return; }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const SplashScreen()),
+          (route) => false,
+    );
   }
 
   @override
@@ -132,17 +152,16 @@ class _BiometricScreenState extends State<BiometricScreen>
                   children: [
                     const SizedBox(width: 40),
                     const Spacer(),
-                    // Badge utilisateur
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(25),
+                        color: Colors.white.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withAlpha(51),
+                          color: Colors.white.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -172,7 +191,6 @@ class _BiometricScreenState extends State<BiometricScreen>
 
                 const Spacer(),
 
-                // Label bienvenue
                 const Text(
                   'BON RETOUR',
                   style: TextStyle(
@@ -182,17 +200,14 @@ class _BiometricScreenState extends State<BiometricScreen>
                     letterSpacing: 2,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
                   widget.userName,
                   style: AppTextStyles.h2White,
                 ),
-
                 const SizedBox(height: 32),
 
-                // Cercle anime avec icone empreinte
+                // Cercle animé
                 ScaleTransition(
                   scale: _pulseAnimation,
                   child: Stack(
@@ -204,7 +219,8 @@ class _BiometricScreenState extends State<BiometricScreen>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppColors.primary.withAlpha(51),
+                            color: AppColors.primary
+                                .withValues(alpha: 0.2),
                             width: 1,
                           ),
                         ),
@@ -215,7 +231,8 @@ class _BiometricScreenState extends State<BiometricScreen>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppColors.primary.withAlpha(77),
+                            color: AppColors.primary
+                                .withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -225,9 +242,11 @@ class _BiometricScreenState extends State<BiometricScreen>
                         height: 100,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.primary.withAlpha(38),
+                          color: AppColors.primary
+                              .withValues(alpha: 0.15),
                           border: Border.all(
-                            color: AppColors.primary.withAlpha(128),
+                            color: AppColors.primary
+                                .withValues(alpha: 0.5),
                             width: 1.5,
                           ),
                         ),
@@ -246,7 +265,7 @@ class _BiometricScreenState extends State<BiometricScreen>
                 const SizedBox(height: 40),
 
                 const Text(
-                  'Authentification biometrique',
+                  'Authentification biométrique',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
@@ -254,11 +273,10 @@ class _BiometricScreenState extends State<BiometricScreen>
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 const Text(
-                  "Touchez le capteur d'empreintes ou utilisez\nFace ID pour vous connecter.",
+                  'Touchez le capteur d\'empreintes ou\n'
+                      'utilisez Face ID pour vous connecter.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textLight,
@@ -266,7 +284,6 @@ class _BiometricScreenState extends State<BiometricScreen>
                     height: 1.6,
                   ),
                 ),
-
                 const SizedBox(height: 24),
 
                 // Badge statut
@@ -277,13 +294,13 @@ class _BiometricScreenState extends State<BiometricScreen>
                   ),
                   decoration: BoxDecoration(
                     color: _authenticated
-                        ? AppColors.success.withAlpha(38)
-                        : AppColors.primary.withAlpha(38),
+                        ? AppColors.success.withValues(alpha: 0.15)
+                        : AppColors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: _authenticated
-                          ? AppColors.success.withAlpha(102)
-                          : AppColors.primary.withAlpha(102),
+                          ? AppColors.success.withValues(alpha: 0.4)
+                          : AppColors.primary.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Row(
@@ -299,10 +316,10 @@ class _BiometricScreenState extends State<BiometricScreen>
                       const SizedBox(width: 8),
                       Text(
                         _authenticated
-                            ? 'IDENTITE CONFIRMEE'
+                            ? 'IDENTITÉ CONFIRMÉE'
                             : _biometricAvailable
-                                ? 'EN ATTENTE D\'AUTHENTIFICATION'
-                                : 'BIOMETRIE NON DISPONIBLE',
+                            ? 'EN ATTENTE D\'AUTHENTIFICATION'
+                            : 'BIOMÉTRIE NON DISPONIBLE',
                         style: TextStyle(
                           color: _authenticated
                               ? AppColors.success
@@ -318,7 +335,6 @@ class _BiometricScreenState extends State<BiometricScreen>
 
                 const Spacer(),
 
-                // Bouton Authentifier
                 SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -326,20 +342,19 @@ class _BiometricScreenState extends State<BiometricScreen>
                     onPressed: _isLoading ? null : _authenticate,
                     child: _isLoading
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                         : const Text('Authentifier'),
                   ),
                 ),
 
                 const SizedBox(height: 16),
 
-                // Changer de compte
                 TextButton(
                   onPressed: _logout,
                   child: const Text(
@@ -359,5 +374,69 @@ class _BiometricScreenState extends State<BiometricScreen>
         ),
       ),
     );
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// Loader post-biométrie
+// Ping le backend pour le réveiller (cold start Render)
+// puis navigue vers le dashboard
+// ══════════════════════════════════════════════════════
+class _LoadingThenDashboard extends StatefulWidget {
+  final String role;
+  const _LoadingThenDashboard({required this.role});
+
+  @override
+  State<_LoadingThenDashboard> createState() =>
+      _LoadingThenDashboardState();
+}
+
+class _LoadingThenDashboardState
+    extends State<_LoadingThenDashboard> {
+
+  @override
+  void initState() {
+    super.initState();
+    _warmupAndNavigate();
+  }
+
+  Future<void> _warmupAndNavigate() async {
+    // Ping le backend en parallèle avec délai minimum
+    await Future.wait([
+      _pingBackend(),
+      Future.delayed(const Duration(milliseconds: 2000)),
+    ]);
+    if (!mounted) { return; }
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) =>
+            LoginScreen.shellForRole(widget.role),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+        transitionDuration: const Duration(milliseconds: 600),
+      ),
+    );
+  }
+
+  Future<void> _pingBackend() async {
+    try {
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
+      final healthUrl = ApiEndpoints.baseUrl
+          .replaceAll('/api/v1', '/actuator/health');
+      await dio.get(healthUrl);
+    } catch (_) {
+      // Silencieux — on navigue quand même
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const LoaderScreen();
   }
 }

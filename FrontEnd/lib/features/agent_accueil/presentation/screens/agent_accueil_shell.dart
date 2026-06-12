@@ -5,7 +5,6 @@ import 'agent_acceuil_mon_activite_screen.dart';
 import 'agent_acceuil_profil_agent_screen.dart';
 import 'agent_acceuil_scanner_carte_screen.dart';
 
-
 /// Coquille principale de l'agent d'accueil : 4 onglets en bas
 /// (Tableau · Scanner · Mon activité · Profil).
 class AgentAccueilShell extends StatefulWidget {

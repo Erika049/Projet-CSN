@@ -35,7 +35,26 @@
       "Bash(tail -15 /tmp/backend_run.log)",
       "Bash(seq 1 40)",
       "Bash(grep -qiE \"is being served at|Flutter run key|lib/main.dart.*available|Error|Exception|Failed\" /tmp/flutter_web.log)",
-      "Bash(tail -20 /tmp/flutter_web.log)"
+      "Bash(tail -20 /tmp/flutter_web.log)",
+      "PowerShell($f = Get-Command flutter -ErrorAction SilentlyContinue; if \\($f\\) { Write-Output $f.Source } else { Write-Output \"NO_FLUTTER\" }; $d = Get-Command dart -ErrorAction SilentlyContinue; if \\($d\\) { Write-Output $d.Source } else { Write-Output \"NO_DART\" })",
+      "Bash(git *)",
+      "Bash(echo \"EXIT $?\")",
+      "Bash(sed -n '1,80p' dto/QrScanRequest.java)",
+      "Bash(sed -n '1,80p' dto/CreerPassageRequest.java)",
+      "Bash(sed -n '1,120p' dto/PatientInfoDto.java)",
+      "PowerShell($f = \"C:\\\\Users\\\\mmaya\\\\Documents\\\\Projet-CSN\\\\FrontEnd\"; \"android exists: \" + \\(Test-Path \"$f\\\\android\"\\); \"ios exists: \" + \\(Test-Path \"$f\\\\ios\"\\); \"manifest exists: \" + \\(Test-Path \"$f\\\\android\\\\app\\\\src\\\\main\\\\AndroidManifest.xml\"\\); \"--- top level ---\"; \\(Get-ChildItem $f -Force -Name\\) -join \", \")",
+      "PowerShell($f=\"C:\\\\Users\\\\mmaya\\\\Documents\\\\Projet-CSN\\\\FrontEnd\"; \"android: \" + \\(Test-Path \"$f\\\\android\"\\); \"ios: \" + \\(Test-Path \"$f\\\\ios\"\\); \"top: \" + \\(\\(\\(Get-ChildItem $f -Force -Directory -ErrorAction SilentlyContinue\\).Name\\) -join ', '\\))",
+      "PowerShell(Set-Location *)",
+      "Bash(./gradlew.bat build *.)",
+      "PowerShell($p = \"C:\\\\Users\\\\mmaya\\\\Documents\\\\Projet-CSN\\\\FrontEnd\\\\build\\\\web\\\\main.dart.js\"; if \\(Test-Path $p\\) { \"WEB BUILD OK: \" + [math]::Round\\(\\(Get-Item $p\\).Length/1MB,1\\) + \" MB\" } else { \"NO ARTIFACT\" })",
+      "Bash(PGPASSWORD=azerty '/c/Program Files/PostgreSQL/17/bin/psql.exe' -U postgres -d numsante -h localhost -t -A -c 'SELECT tablename FROM pg_tables WHERE schemaname='\\\\''public'\\\\'' ORDER BY tablename;')",
+      "Bash(PGPASSWORD=azerty '/c/Program Files/PostgreSQL/17/bin/psql.exe' -U postgres -d numsante -h localhost -t -A -c 'SELECT table_name||'\\\\''.'\\\\''||column_name FROM information_schema.columns WHERE table_schema='\\\\''public'\\\\'' AND \\(column_name ILIKE '\\\\''%qr%'\\\\'' OR column_name ILIKE '\\\\''%token%'\\\\''\\);')",
+      "Bash(PGPASSWORD=azerty '/c/Program Files/PostgreSQL/17/bin/psql.exe' -U postgres -d numsante -h localhost -t -A -c 'SELECT column_name FROM information_schema.columns WHERE table_name='\\\\''carte_numerique'\\\\'' ORDER BY ordinal_position;')",
+      "Bash(PGPASSWORD=azerty '/c/Program Files/PostgreSQL/17/bin/psql.exe' -U postgres -d numsante -h localhost -t -A -c 'SELECT count\\(*\\) FROM carte_numerique;')",
+      "Bash(PGPASSWORD=azerty '/c/Program Files/PostgreSQL/17/bin/psql.exe' -U postgres -d numsante -h localhost -t -A -c 'SELECT count\\(*\\) FROM patient;')",
+      "Bash(export PGPASSWORD=azerty)",
+      "Bash('/c/Program Files/PostgreSQL/17/bin/psql.exe' -U postgres -d numsante -h localhost -A -t -c 'SELECT count\\(*\\) FROM cartes_numeriques;')",
+      "Bash('/c/Program Files/PostgreSQL/17/bin/psql.exe' -U postgres -d numsante -h localhost -A -t '-F|' -c 'SELECT qr_code_token, id_patient FROM cartes_numeriques LIMIT 3;')"
     ]
   }
 }
