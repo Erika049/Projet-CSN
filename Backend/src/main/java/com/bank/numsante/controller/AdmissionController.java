@@ -1,8 +1,6 @@
 package com.bank.numsante.controller;
 
-import com.bank.numsante.dto.CreerPassageRequest;
-import com.bank.numsante.dto.PatientInfoDto;
-import com.bank.numsante.dto.QrScanRequest;
+import com.bank.numsante.dto.*;
 import com.bank.numsante.service.AdmissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -34,5 +32,19 @@ public class AdmissionController {
         UUID idPassage = admissionService.creerPassage(request, authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("id_passage", idPassage, "statut", "en_cours"));
+    }
+
+    @GetMapping("/dashboard/{idPersonnel}")
+    @Operation(summary = "Dashboard complet agent d'accueil")
+    public ResponseEntity<DashboardAccueilDto> getDashboard(@PathVariable Long idPersonnel) {
+        return ResponseEntity.ok(admissionService.getDashboard(idPersonnel));
+    }
+
+    @GetMapping("/activite/{idPersonnel}")
+    @Operation(summary = "Activité de l'agent d'accueil")
+    public ResponseEntity<ActiviteAgentDto> getActivite(
+            @PathVariable Long idPersonnel,
+            @RequestParam(defaultValue = "1") int jours) {
+        return ResponseEntity.ok(admissionService.getActivite(idPersonnel, jours));
     }
 }

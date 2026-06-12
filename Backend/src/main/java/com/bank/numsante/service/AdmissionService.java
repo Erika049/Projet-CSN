@@ -1,86 +1,178 @@
 package com.bank.numsante.service;
 
-import com.bank.numsante.dto.CreerPassageRequest;
-import com.bank.numsante.dto.PatientInfoDto;
-import com.bank.numsante.dto.QrScanRequest;
-import com.bank.numsante.entity.*;
+import com.bank.numsante.dto.*;
+import com.bank.numsante.entity.Hopital;
+import com.bank.numsante.entity.PersonnelMedical;
+import com.bank.numsante.entity.LogTracabilite;
 import com.bank.numsante.repository.*;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.UUID;
-import com.bank.numsante.repository.PassageMedicalRepository;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class AdmissionService {
+public class AdminService {
 
-    private final CarteNumeriqueRepository carteRepo;
-    private final PatientRepository patientRepo;
-    private final HopitalRepository hopitalRepo;
-    private final PersonnelMedicalRepository personnelRepo;
-    private final PassageMedicalRepository passageRepo;
-    private final LogService logService;
-    private final HttpServletRequest httpServletRequest;
-    private final NotificationService notificationService;
+    private final PersonnelMedicalRepository  personnelRepo;
+    private final HopitalRepository           hopitalRepo;
+    private final PatientRepository           patientRepo;
+    private final PassageMedicalRepository    passageRepo;
+    private final ExamenLaboratoireRepository examenRepo;
+    private final LogTracabiliteRepository    logRepo;
+    private final PasswordEncoder             encoder;
 
-    public PatientInfoDto scanCarte(QrScanRequest request) {
-        CarteNumerique carte = carteRepo.findByQrCodeToken(request.getQrCodeToken())
-                .orElseThrow(() -> new RuntimeException("Carte invalide ou inexistante"));
-        Patient patient = carte.getPatient();
+    // ── Stats globales ────────────────────────────
+    public AdminStatsDto getStats() {
+        LocalDateTime debutJour =
+                LocalDate.now().atStartOfDay();
 
-        logService.logAction(null, patient.getIdPatient(), "SCAN_QR_CODE", null);
+        long nbPassagesAujourdhui = passageRepo
+                .findAll()
+                .stream()
+                .filter(p -> p.getDateAdmission()
+                        .isAfter(debutJour))
+                .count();
 
-        // Dernier passage
-        List<PassageMedical> passages = passageRepo
-                .findByPatient_IdPatientOrderByDateAdmissionDesc(patient.getIdPatient());
-        String dernierPassage = passages.isEmpty() ? null :
-                passages.get(0).getDateAdmission()
-                        .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        long nbExamensAujourdhui = examenRepo
+                .findAll()
+                .stream()
+                .filter(e -> e.getDateResultat()
+                        .isAfter(debutJour))
+                .count();
 
-        return new PatientInfoDto(
-                patient.getIdPatient(),
-                patient.getNom(),
-                patient.getPrenom(),
-                patient.getDateNaissance(),
-                patient.getGenre(),
-                patient.getGroupeSanguin(),
-                patient.getTelephone(),
-                carte.getStatut(),
-                carte.getExpireLe(),
-                dernierPassage
+        return new AdminStatsDto(
+                patientRepo.count(),
+                personnelRepo.count(),
+                hopitalRepo.count(),
+                nbPassagesAujourdhui,
+                nbExamensAujourdhui
         );
     }
 
-    @Transactional
-    public UUID creerPassage(CreerPassageRequest request, String username) {
-        Patient patient = patientRepo.findById(UUID.fromString(request.getIdPatient()))
-                .orElseThrow(() -> new RuntimeException("Patient non trouvé"));
-        Hopital hopital = hopitalRepo.findById(request.getIdHopital())
-                .orElseThrow(() -> new RuntimeException("Hôpital non trouvé"));
-        PersonnelMedical createur = personnelRepo.findByIdentifiantPro(username)
-                .orElseThrow(() -> new RuntimeException("Personnel non trouvé"));
+    // ── Personnel ─────────────────────────────────
+    public List<PersonnelDto> getPersonnel() {
+        return personnelRepo.findAll()
+                .stream()
+                .map(this::toPersonnelDto)
+                .collect(Collectors.toList());
+    }
 
-        PassageMedical passage = new PassageMedical();
-        passage.setPatient(patient);
-        passage.setHopital(hopital);
-        passage.setCreateur(createur);
-        passage.setMotifVisite(request.getMotifVisite());
-        passage.setStatutPassage("en_cours");
-        passage = passageRepo.save(passage);
+    public PersonnelDto creerPersonnel(
+            CreerPersonnelRequest request) {
+        Hopital hopital = hopitalRepo
+                .findById(request.getIdHopital())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Hôpital introuvable"));
 
-        logService.logAction(createur.getIdPersonnel(), patient.getIdPatient(),
-                "CREATION_PASSAGE", passage.getIdPassage());
+        PersonnelMedical p = new PersonnelMedical();
+        p.setNom(request.getNom());
+        p.setPrenom(request.getPrenom());
+        p.setRole(request.getRole());
+        p.setIdentifiantPro(
+                request.getIdentifiantPro());
+        p.setMotDePasseHash(
+                encoder.encode(
+                        request.getMotDePasse()));
+        p.setHopital(hopital);
+        p.setEstActif(true);
 
-        notificationService.creerNotification(
-                patient.getIdPatient(),
-                "Admission enregistrée",
-                "Hôpital " + hopital.getNom() + " — " + request.getMotifVisite(),
-                "admission"
+        return toPersonnelDto(
+                personnelRepo.save(p));
+    }
+
+    public PersonnelDto toggleActif(
+            Long idPersonnel) {
+        PersonnelMedical p = personnelRepo
+                .findById(idPersonnel)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Personnel introuvable"));
+        p.setEstActif(!p.getEstActif());
+        return toPersonnelDto(
+                personnelRepo.save(p));
+    }
+
+    // ── Hôpitaux ──────────────────────────────────
+    public List<HopitalDto> getHopitaux() {
+        return hopitalRepo.findAll()
+                .stream()
+                .map(this::toHopitalDto)
+                .collect(Collectors.toList());
+    }
+
+    public HopitalDto creerHopital(
+            CreerHopitalRequest request) {
+        Hopital h = new Hopital();
+        h.setNom(request.getNom());
+        h.setAdresse(request.getAdresse());
+        h.setCodeUnique(request.getCodeUnique());
+        return toHopitalDto(hopitalRepo.save(h));
+    }
+
+    // ── Logs ──────────────────────────────────────
+    public List<LogDto> getLogs(int limit) {
+        return logRepo
+                .findAllByOrderByHorodatageDesc(
+                        PageRequest.of(0, limit))
+                .stream()
+                .map(this::toLogDto)
+                .collect(Collectors.toList());
+    }
+
+    // ── Mappers ───────────────────────────────────
+    private PersonnelDto toPersonnelDto(
+            PersonnelMedical p) {
+        return new PersonnelDto(
+                p.getIdPersonnel(),
+                p.getNom(),
+                p.getPrenom(),
+                p.getRole(),
+                p.getIdentifiantPro(),
+                p.getHopital() != null
+                        ? p.getHopital().getNom()
+                        : "",
+                p.getHopital() != null
+                        ? p.getHopital().getIdHopital()
+                        : null,
+                p.getEstActif()
         );
+    }
 
-        return passage.getIdPassage();
+    private HopitalDto toHopitalDto(Hopital h) {
+        int nb = h.getPersonnels() != null
+                ? h.getPersonnels().size() : 0;
+        return new HopitalDto(
+                h.getIdHopital(),
+                h.getNom(),
+                h.getAdresse(),
+                h.getCodeUnique(),
+                nb
+        );
+    }
+
+    private LogDto toLogDto(LogTracabilite l) {
+        String nomPersonnel =
+                l.getPersonnel() != null
+                        ? l.getPersonnel().getPrenom()
+                        + " " + l.getPersonnel().getNom()
+                        : l.getIdUtilisateur() != null
+                        ? "Personnel #"
+                        + l.getIdUtilisateur()
+                        : "Système";
+        return new LogDto(
+                l.getIdLog(),
+                nomPersonnel,
+                l.getIdPatient(),
+                l.getActionEffectuee(),
+                l.getAdresseIp(),
+                l.getHorodatage()
+        );
     }
 }
