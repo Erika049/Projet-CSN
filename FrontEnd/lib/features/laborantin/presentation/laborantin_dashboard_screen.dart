@@ -18,8 +18,8 @@ class _LaborantinDashboardScreenState
   final _service     = LaborantinApiService();
   final _authService = AuthLocalService();
 
-  String?              _nom;
-  StatsLabo?           _stats;
+  String?                _nom;
+  StatsLabo?             _stats;
   List<PassageEnAttente> _passages = [];
   bool    _loading = true;
   String? _error;
@@ -50,13 +50,27 @@ class _LaborantinDashboardScreenState
       if (!mounted) { return; }
       setState(() {
         _loading = false;
-        _error   = e.toString().contains('timeout') ||
-            e.toString().contains('longer than')
-            ? 'Le serveur met du temps à répondre.\n'
-            'Cliquez sur Réessayer.'
-            : 'Impossible de charger les données.';
+        _error   =
+        'Impossible de charger les données.';
       });
     }
+  }
+
+  bool _isUrgent(PassageEnAttente p) =>
+      p.motifVisite.toLowerCase().contains('urgence') ||
+          p.motifVisite.toLowerCase().contains('urgent');
+
+  int get _nbUrgents =>
+      _passages.where(_isUrgent).length;
+
+  String _initiales(String? nom) {
+    if (nom == null || nom.isEmpty) { return 'PN'; }
+    return nom
+        .split(' ')
+        .map((w) => w.isNotEmpty ? w[0] : '')
+        .take(2)
+        .join()
+        .toUpperCase();
   }
 
   @override
@@ -66,7 +80,7 @@ class _LaborantinDashboardScreenState
         backgroundColor: AppColors.backgroundLight,
         body: Center(
           child: CircularProgressIndicator(
-              color: AppColors.warning,
+              color: Color(0xFFB45309),
               strokeWidth: 2),
         ),
       );
@@ -76,37 +90,22 @@ class _LaborantinDashboardScreenState
       return Scaffold(
         backgroundColor: AppColors.backgroundLight,
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment:
-              MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.cloud_off_rounded,
-                    size: 64,
-                    color: AppColors.textLight),
-                const SizedBox(height: 16),
-                const Text(
-                  'Impossible de charger\nles données',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textDark),
-                ),
-                const SizedBox(height: 8),
-                Text(_error!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textMedium,
-                        height: 1.5)),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                    onPressed: _loadData,
-                    child: const Text('Réessayer')),
-              ],
-            ),
+          child: Column(
+            mainAxisAlignment:
+            MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.cloud_off_rounded,
+                  size: 48,
+                  color: AppColors.textLight),
+              const SizedBox(height: 12),
+              Text(_error!,
+                  style: const TextStyle(
+                      color: AppColors.textMedium)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                  onPressed: _loadData,
+                  child: const Text('Réessayer')),
+            ],
           ),
         ),
       );
@@ -116,178 +115,236 @@ class _LaborantinDashboardScreenState
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.warning,
+          color: const Color(0xFFB45309),
           onRefresh: _loadData,
-          child: SingleChildScrollView(
+          child: CustomScrollView(
             physics:
             const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 24),
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding:
+                  const EdgeInsets.fromLTRB(
+                      20, 20, 20, 0),
                   child: Column(
                     crossAxisAlignment:
                     CrossAxisAlignment.start,
                     children: [
-                      if (_stats != null)
-                        _buildStats(_stats!),
+                      // ── Header ─────────────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                              CrossAxisAlignment
+                                  .start,
+                              children: [
+                                const Text(
+                                  'Laboratoire · Hôpital Général',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors
+                                        .textMedium,
+                                  ),
+                                ),
+                                Text(
+                                  'Bonjour ${_nom?.split(' ').first ?? 'Patrick'}',
+                                  style:
+                                  const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight:
+                                    FontWeight.w700,
+                                    color: AppColors
+                                        .textDark,
+                                    letterSpacing: -0.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                  0xFFFEF3C7),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                _initiales(_nom),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight:
+                                  FontWeight.w700,
+                                  color:
+                                  Color(0xFFB45309),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // ── 3 Stats ────────────────
+                      Row(
+                        children: [
+                          _StatPill(
+                            value: _passages.length
+                                .toString(),
+                            label: 'EN ATTENTE',
+                            color: AppColors.primary,
+                            bg: AppColors.primaryLight,
+                          ),
+                          const SizedBox(width: 10),
+                          _StatPill(
+                            value:
+                            _nbUrgents.toString(),
+                            label: 'URGENTS',
+                            color: AppColors.error,
+                            bg: AppColors.errorLight,
+                          ),
+                          const SizedBox(width: 10),
+                          _StatPill(
+                            value: (_stats?.total ?? 0)
+                                .toString(),
+                            label: 'PUBLIÉS',
+                            color: AppColors.textMedium,
+                            bg: const Color(0xFFF1F3F4),
+                          ),
+                        ],
+                      ),
+
                       const SizedBox(height: 24),
-                      _buildPassagesEnAttente(),
+
+                      // ── Titre + Filtrer ────────
+                      Row(
+                        mainAxisAlignment:
+                        MainAxisAlignment
+                            .spaceBetween,
+                        children: [
+                          const Text(
+                            'Demandes d\'examens',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight:
+                              FontWeight.w700,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {},
+                            child: const Text(
+                              'Filtrer',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.primary,
+                                fontWeight:
+                                FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+              ),
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          20, 16, 20, 0),
-      child: Row(
-        children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.warning
-                  .withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Icon(Icons.science_outlined,
-                  color: AppColors.warning,
-                  size: 20),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-              children: [
-                const Text('Bonjour,',
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textMedium)),
-                Text(
-                  _nom ?? 'Laborantin',
-                  style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textDark),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStats(StatsLabo stats) {
-    return Row(
-      children: [
-        _StatCard(
-          label: 'En attente',
-          value: stats.enAttente.toString(),
-          color: AppColors.warning,
-          bg:    const Color(0xFFFEF3C7),
-        ),
-        const SizedBox(width: 12),
-        _StatCard(
-          label: 'Publiés',
-          value: stats.total.toString(),
-          color: AppColors.success,
-          bg:    AppColors.successLight,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPassagesEnAttente() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment:
-          MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Patients en attente',
-                style: AppTextStyles.h4),
-            Text(
-              '${_passages.length} patient'
-                  '${_passages.length > 1 ? 's' : ''}',
-              style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textMedium),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (_passages.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundWhite,
-              borderRadius: BorderRadius.circular(16),
-              border:
-              Border.all(color: AppColors.border),
-            ),
-            child: const Center(
-              child: Column(
-                children: [
-                  Icon(Icons.check_circle_outline,
-                      size: 40,
-                      color: AppColors.success),
-                  SizedBox(height: 8),
-                  Text(
-                    'Aucun examen en attente',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textMedium),
+              // ── Liste ──────────────────────────
+              _passages.isEmpty
+                  ? SliverToBoxAdapter(
+                child: Padding(
+                  padding:
+                  const EdgeInsets.all(40),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration:
+                          BoxDecoration(
+                            color: AppColors
+                                .successLight,
+                            shape:
+                            BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            color:
+                            AppColors.success,
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Aucune demande\nen attente',
+                          textAlign:
+                          TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight:
+                            FontWeight.w600,
+                            color:
+                            AppColors.textDark,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
+              )
+                  : SliverPadding(
+                padding:
+                const EdgeInsets.fromLTRB(
+                    20, 0, 20, 100),
+                sliver: SliverList(
+                  delegate:
+                  SliverChildBuilderDelegate(
+                        (_, i) {
+                      final p = _passages[i];
+                      return _ExamenCard(
+                        passage:  p,
+                        isUrgent: _isUrgent(p),
+                        onTap: () =>
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    LaborantinPublierScreen(
+                                        passage: p),
+                              ),
+                            ).then(
+                                    (_) => _loadData()),
+                      );
+                    },
+                    childCount: _passages.length,
+                  ),
+                ),
               ),
-            ),
-          )
-        else
-          ..._passages.map((p) => _PassageCard(
-            passage: p,
-            onTap:   () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    LaborantinPublierScreen(
-                        passage: p),
-              ),
-            ).then((_) => _loadData()),
-          )),
-      ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
 // ── Widgets locaux ─────────────────────────────────────
 
-class _StatCard extends StatelessWidget {
-  final String label;
+class _StatPill extends StatelessWidget {
   final String value;
+  final String label;
   final Color  color;
   final Color  bg;
 
-  const _StatCard({
-    required this.label,
+  const _StatPill({
     required this.value,
+    required this.label,
     required this.color,
     required this.bg,
   });
@@ -297,10 +354,10 @@ class _StatCard extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: 14, vertical: 16),
+            horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment:
@@ -309,16 +366,22 @@ class _StatCard extends StatelessWidget {
             Text(
               value,
               style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                  letterSpacing: -0.5),
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: color,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: 2),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMedium)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textMedium,
+                letterSpacing: 0.4,
+              ),
+            ),
           ],
         ),
       ),
@@ -326,12 +389,14 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _PassageCard extends StatelessWidget {
+class _ExamenCard extends StatelessWidget {
   final PassageEnAttente passage;
+  final bool             isUrgent;
   final VoidCallback?    onTap;
 
-  const _PassageCard({
+  const _ExamenCard({
     required this.passage,
+    required this.isUrgent,
     this.onTap,
   });
 
@@ -346,25 +411,30 @@ class _PassageCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.backgroundWhite,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: isUrgent
+                ? AppColors.error
+                .withValues(alpha: 0.3)
+                : AppColors.border,
+          ),
         ),
         child: Row(
           children: [
             Container(
-              width: 40, height: 40,
+              width: 42, height: 42,
               decoration: BoxDecoration(
-                color: AppColors.warning
-                    .withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+                color: isUrgent
+                    ? AppColors.errorLight
+                    : AppColors.primaryLight,
+                borderRadius:
+                BorderRadius.circular(12),
               ),
-              child: Center(
-                child: Text(
-                  passage.initiales,
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.warning),
-                ),
+              child: Icon(
+                Icons.science_outlined,
+                size: 20,
+                color: isUrgent
+                    ? AppColors.error
+                    : AppColors.primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -373,56 +443,60 @@ class _PassageCard extends StatelessWidget {
                 crossAxisAlignment:
                 CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    passage.nomComplet,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textDark),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          passage.motifVisite,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                      ),
+                      if (isUrgent)
+                        Container(
+                          padding: const EdgeInsets
+                              .symmetric(
+                              horizontal: 8,
+                              vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.errorLight,
+                            borderRadius:
+                            BorderRadius.circular(
+                                999),
+                          ),
+                          child: const Text(
+                            'Urgent',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight:
+                              FontWeight.w600,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${passage.age} ans · '
-                        '${passage.groupeSanguin} · '
-                        '${passage.motifVisite}',
+                    passage.nomComplet,
                     style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMedium),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  Text(
+                    'Demandé à ${passage.heure} · ${passage.hopital}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMedium,
+                    ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.end,
-              children: [
-                Text(
-                  passage.heure,
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textLight),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius:
-                    BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'En attente',
-                    style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.warning),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

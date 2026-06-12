@@ -1,81 +1,93 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/theme.dart';
-import 'laborantin_dashboard_screen.dart';
-import 'laborantin_examens_screen.dart';
-import 'laborantin_activite_screen.dart';
-import 'laborantin_profil_screen.dart';
+import 'admin_dashboard_screen.dart';
+import 'admin_personnel_screen.dart';
+import 'admin_hopitaux_screen.dart';
+import 'admin_logs_screen.dart';
+import 'admin_profil_screen.dart';
 
-class LaborantinShell extends StatefulWidget {
-  const LaborantinShell({super.key});
+class AdminShell extends StatefulWidget {
+  const AdminShell({super.key});
 
   @override
-  State<LaborantinShell> createState() =>
-      _LaborantinShellState();
+  State<AdminShell> createState() =>
+      _AdminShellState();
 }
 
-class _LaborantinShellState
-    extends State<LaborantinShell> {
+class _AdminShellState extends State<AdminShell> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
-    LaborantinDashboardScreen(),
-    LaborantinExamensScreen(),
-    LaborantinActiviteScreen(),
-    LaborantinProfilScreen(),
+    AdminDashboardScreen(),
+    AdminPersonnelScreen(),
+    AdminHopitauxScreen(),
+    AdminLogsScreen(),
+    AdminProfilScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0B1A3D),
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          color: AppColors.backgroundWhite,
+          color: Color(0xFF0B1A3D),
           border: Border(
-              top: BorderSide(
-                  color: AppColors.border)),
+            top: BorderSide(
+                color: Color(0xFF1E3A6E),
+                width: 1),
+          ),
         ),
         child: SafeArea(
           child: SizedBox(
             height: 60,
             child: Row(
               children: [
-                _NavItem(
-                  icon: Icons.science_outlined,
-                  iconActive: Icons.science_rounded,
-                  label: 'À traiter',
+                _AdminNavItem(
+                  icon: Icons.dashboard_outlined,
+                  iconActive:
+                  Icons.dashboard_rounded,
+                  label: 'Dashboard',
                   isActive: _currentIndex == 0,
                   onTap: () => setState(
                           () => _currentIndex = 0),
                 ),
-                _NavItem(
-                  icon: Icons.upload_outlined,
-                  iconActive: Icons.upload_rounded,
-                  label: 'Publier',
+                _AdminNavItem(
+                  icon: Icons.people_outline,
+                  iconActive: Icons.people_rounded,
+                  label: 'Personnel',
                   isActive: _currentIndex == 1,
                   onTap: () => setState(
                           () => _currentIndex = 1),
                 ),
-                _NavItem(
+                _AdminNavItem(
                   icon:
-                  Icons.access_time_outlined,
-                  iconActive: Icons
-                      .access_time_filled_rounded,
-                  label: 'Mon activité',
+                  Icons.local_hospital_outlined,
+                  iconActive:
+                  Icons.local_hospital_rounded,
+                  label: 'Hôpitaux',
                   isActive: _currentIndex == 2,
                   onTap: () => setState(
                           () => _currentIndex = 2),
                 ),
-                _NavItem(
-                  icon: Icons.person_outline,
-                  iconActive: Icons.person_rounded,
-                  label: 'Profil',
+                _AdminNavItem(
+                  icon: Icons.shield_outlined,
+                  iconActive: Icons.shield_rounded,
+                  label: 'Audit',
                   isActive: _currentIndex == 3,
                   onTap: () => setState(
                           () => _currentIndex = 3),
+                ),
+                _AdminNavItem(
+                  icon: Icons.person_outline,
+                  iconActive: Icons.person_rounded,
+                  label: 'Profil',
+                  isActive: _currentIndex == 4,
+                  onTap: () => setState(
+                          () => _currentIndex = 4),
                 ),
               ],
             ),
@@ -86,14 +98,14 @@ class _LaborantinShellState
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _AdminNavItem extends StatelessWidget {
   final IconData     icon;
   final IconData     iconActive;
   final String       label;
   final bool         isActive;
   final VoidCallback onTap;
 
-  const _NavItem({
+  const _AdminNavItem({
     required this.icon,
     required this.iconActive,
     required this.label,
@@ -103,7 +115,6 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = Color(0xFFB45309);
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -115,8 +126,8 @@ class _NavItem extends StatelessWidget {
             Icon(
               isActive ? iconActive : icon,
               color: isActive
-                  ? activeColor
-                  : AppColors.textLight,
+                  ? Colors.white
+                  : const Color(0xFF4A6FA5),
               size: 22,
             ),
             const SizedBox(height: 3),
@@ -128,8 +139,8 @@ class _NavItem extends StatelessWidget {
                     ? FontWeight.w600
                     : FontWeight.w400,
                 color: isActive
-                    ? activeColor
-                    : AppColors.textLight,
+                    ? Colors.white
+                    : const Color(0xFF4A6FA5),
               ),
             ),
           ],
