@@ -16,12 +16,17 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    AdminDashboardScreen(),
-    AdminPersonnelScreen(),
-    AdminHopitauxScreen(),
-    AdminLogsScreen(),
-    AdminProfilScreen(),
+  void _navigateTo(int index) {
+    setState(() => _currentIndex = index);
+  }
+
+  List<Widget> get _screens => [
+    AdminDashboardScreen(
+        onNavigate: _navigateTo),
+    const AdminPersonnelScreen(),
+    const AdminHopitauxScreen(),
+    const AdminLogsScreen(),
+    const AdminProfilScreen(),
   ];
 
   @override

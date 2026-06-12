@@ -4,7 +4,12 @@ import '../../data/admin_api_service.dart';
 import '../../data/admin_models.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+  final void Function(int index)? onNavigate;
+
+  const AdminDashboardScreen({
+    super.key,
+    this.onNavigate,
+  });
 
   @override
   State<AdminDashboardScreen> createState() =>
@@ -188,7 +193,7 @@ class _AdminDashboardScreenState
 
                 const SizedBox(height: 28),
 
-                // ── KPI label ────────────────────
+                // ── KPI ──────────────────────────
                 const Text(
                   'VUE D\'ENSEMBLE (KPI)',
                   style: TextStyle(
@@ -201,7 +206,6 @@ class _AdminDashboardScreenState
 
                 const SizedBox(height: 14),
 
-                // ── Grille KPI ───────────────────
                 if (_stats != null) ...[
                   Row(
                     children: [
@@ -213,6 +217,8 @@ class _AdminDashboardScreenState
                         color:
                         const Color(0xFF4FC3F7),
                         bg: const Color(0xFF0D2B4A),
+                        // ── KPI cliquable ───────
+                        onTap: null,
                       ),
                       const SizedBox(width: 12),
                       _KpiCard(
@@ -224,6 +230,9 @@ class _AdminDashboardScreenState
                         color:
                         const Color(0xFF81C784),
                         bg: const Color(0xFF0D3A1A),
+                        onTap: () =>
+                            widget.onNavigate
+                                ?.call(1),
                       ),
                     ],
                   ),
@@ -239,6 +248,9 @@ class _AdminDashboardScreenState
                         color:
                         const Color(0xFFCE93D8),
                         bg: const Color(0xFF2A1040),
+                        onTap: () =>
+                            widget.onNavigate
+                                ?.call(2),
                       ),
                       const SizedBox(width: 12),
                       _KpiCard(
@@ -250,6 +262,7 @@ class _AdminDashboardScreenState
                         color:
                         const Color(0xFFFFB74D),
                         bg: const Color(0xFF3A2000),
+                        onTap: null,
                       ),
                     ],
                   ),
@@ -258,8 +271,7 @@ class _AdminDashboardScreenState
                     icon: Icons.science_outlined,
                     label:
                     'Examens publiés aujourd\'hui',
-                    value: _stats!
-                        .nbExamensAujourdhui
+                    value: _stats!.nbExamensAujourdhui
                         .toString(),
                     color: const Color(0xFF80CBC4),
                     bg: const Color(0xFF0D2E2B),
@@ -286,20 +298,28 @@ class _AdminDashboardScreenState
                       icon:
                       Icons.person_add_outlined,
                       label: 'Nouveau\ncompte',
-                      onTap: () {},
+                      // ── Navigate vers Personnel
+                      // + ouvre le sheet de création
+                      onTap: () =>
+                          widget.onNavigate
+                              ?.call(1),
                     ),
                     const SizedBox(width: 10),
                     _QuickAction(
                       icon: Icons
                           .add_business_outlined,
                       label: 'Nouvel\nhôpital',
-                      onTap: () {},
+                      onTap: () =>
+                          widget.onNavigate
+                              ?.call(2),
                     ),
                     const SizedBox(width: 10),
                     _QuickAction(
                       icon: Icons.history_outlined,
                       label: 'Journal\naudit',
-                      onTap: () {},
+                      onTap: () =>
+                          widget.onNavigate
+                              ?.call(3),
                     ),
                     const SizedBox(width: 10),
                     _QuickAction(
@@ -321,11 +341,12 @@ class _AdminDashboardScreenState
 // ── Widgets locaux ─────────────────────────────────────
 
 class _KpiCard extends StatelessWidget {
-  final IconData icon;
-  final String   label;
-  final String   value;
-  final Color    color;
-  final Color    bg;
+  final IconData      icon;
+  final String        label;
+  final String        value;
+  final Color         color;
+  final Color         bg;
+  final VoidCallback? onTap;
 
   const _KpiCard({
     required this.icon,
@@ -333,43 +354,61 @@ class _KpiCard extends StatelessWidget {
     required this.value,
     required this.color,
     required this.bg,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withValues(alpha: 0.2),
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: color.withValues(alpha: 0.2),
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w700,
-                color: color,
-                letterSpacing: -0.5,
+          child: Column(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 20),
+                  if (onTap != null) ...[
+                    const Spacer(),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: color.withValues(
+                          alpha: 0.5),
+                      size: 12,
+                    ),
+                  ],
+                ],
               ),
-            ),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.white54,
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
-          ],
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.white54,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
